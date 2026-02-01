@@ -36,6 +36,8 @@
 *.exe
 *.out
 *.app
+build/
+build-web/
 
 # debug information files
 *.dwo
