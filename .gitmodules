@@ -1,5 +1,5 @@
 [submodule "dawn"]
 	path = dawn
 	url = https://github.com/google/dawn.git
-	branch = chromium/7559 # Chrome 144
+	branch = chromium/7559 # Chrome 144 
 	shallow = true
