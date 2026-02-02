@@ -36,8 +36,11 @@
 *.exe
 *.out
 *.app
-build/
-build-web/
 
 # debug information files
 *.dwo
+
+# Misc
+build/
+build-web/
+imgui.ini

@@ -18,7 +18,7 @@ public:
     void onFinish();
     bool isRunning();
 
-    void onResize() {};
+    void onResize();
     void onMouseMove(double xpos, double ypos) {};
     void onMouseButton(int button, int action, int mods) {};
     void onScroll(double xoffset, double yoffset) {};
@@ -28,6 +28,10 @@ private:
     bool initInstance();
     bool initSurface();
     bool initRenderPipeline();
+
+    bool initGui();
+    void terminateGui();
+    void updateGui(wgpu::RenderPassEncoder encoder);
 
     void Render();
 

@@ -1,5 +1,9 @@
 #include "Application.h"
 
+#include <imgui.h>
+#include <backends/imgui_impl_wgpu.h>
+#include <backends/imgui_impl_glfw.h>
+
 const char shaderCode[] = R"(
     @vertex fn vertexMain(@builtin(vertex_index) i : u32) ->
       @builtin(position) vec4f {
@@ -22,11 +26,24 @@ void Application::Render()
 
     std::cout << "frame" << std::endl;
 
+    // ImGui::Begin("Hello, world!");
+    // ImGui::Text("This is some useful text.");
+    // if (ImGui::Button("Click me"))
+    // {
+    //     std::cout << "clicked" << std::endl;
+    // }
+    // ImGui::End();
+
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
+
     pass.SetPipeline(m_pipeline);
     pass.Draw(3);
+
+    updateGui(pass);
+
     pass.End();
+
     wgpu::CommandBuffer commands = encoder.Finish();
     m_device.GetQueue().Submit(1, &commands);
 }
@@ -139,7 +156,10 @@ bool Application::initSurface()
     m_surface.GetCapabilities(m_adapter, &capabilities);
     m_format = capabilities.formats[0];
 
-    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = m_kWidth, .height = m_kHeight};
+    int width, height;
+    glfwGetFramebufferSize(m_window, &width, &height);
+
+    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
     m_surface.Configure(&config);
     std::cout << "Surface created: " << m_surface.Get() << std::endl;
 
@@ -165,6 +185,63 @@ bool Application::initRenderPipeline()
     return m_pipeline != nullptr;
 }
 
+bool Application::initGui()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::GetIO();
+
+    ImGui_ImplWGPU_InitInfo info = {};
+    info.Device = m_device.Get();
+    info.RenderTargetFormat = static_cast<WGPUTextureFormat>(m_format);
+
+    ImGui_ImplGlfw_InitForOther(m_window, true);
+    ImGui_ImplWGPU_Init(&info);
+    return true;
+}
+
+void Application::updateGui(wgpu::RenderPassEncoder encoder)
+{
+    ImGui_ImplWGPU_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    {
+        static float f = 0.0f;
+        static int counter = 0;
+        static bool show_demo_window = true;
+        static bool show_another_window = false;
+        static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+        ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+
+        ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
+        ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
+        ImGui::Checkbox("Another Window", &show_another_window);
+
+        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
+        ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
+
+        if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
+            counter++;
+        ImGui::SameLine();
+        ImGui::Text("counter = %d", counter);
+
+        ImGuiIO &io = ImGui::GetIO();
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::End();
+    }
+
+    ImGui::EndFrame();
+    ImGui::Render();
+    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), encoder.Get());
+}
+
+void Application::onResize()
+{
+    initSurface();
+}
+
 bool Application::isRunning()
 {
     return !glfwWindowShouldClose(m_window);
@@ -182,6 +259,9 @@ bool Application::onInit()
         return false;
 
     if (!initRenderPipeline())
+        return false;
+
+    if (!initGui())
         return false;
 
     return true;
