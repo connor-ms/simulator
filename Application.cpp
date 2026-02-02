@@ -275,6 +275,8 @@ bool Application::initGui()
     ImGui::CreateContext();
     ImGui::GetIO();
 
+    applyTheme();
+
     ImGui_ImplWGPU_InitInfo info = {};
     info.Device = m_device.Get();
     info.RenderTargetFormat = static_cast<WGPUTextureFormat>(m_format);
