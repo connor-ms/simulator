@@ -1,19 +1,19 @@
 add_library(imgui STATIC
-    imgui/imgui.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_tables.cpp
-    imgui/imgui_widgets.cpp
+    external/imgui/imgui.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
 
-    imgui/misc/cpp/imgui_stdlib.cpp
+    external/imgui/misc/cpp/imgui_stdlib.cpp
 
-    imgui/backends/imgui_impl_glfw.cpp
-    imgui/backends/imgui_impl_wgpu.cpp
+    external/imgui/backends/imgui_impl_glfw.cpp
+    external/imgui/backends/imgui_impl_wgpu.cpp
 )
 
 target_include_directories(imgui PUBLIC
-    imgui
-    imgui/backends
-    imgui/misc/cpp
+    external/imgui
+    external/imgui/backends
+    external/imgui/misc/cpp
 )
 
 target_compile_definitions(imgui PUBLIC
@@ -23,8 +23,8 @@ target_compile_definitions(imgui PUBLIC
 
 if(APPLE)
     set_source_files_properties(
-        imgui/backends/imgui_impl_glfw.cpp
-        imgui/backends/imgui_impl_wgpu.cpp
+        external/imgui/backends/imgui_impl_glfw.cpp
+        external/imgui/backends/imgui_impl_wgpu.cpp
         PROPERTIES LANGUAGE OBJCXX
     )
 endif()

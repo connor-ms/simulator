@@ -2,10 +2,13 @@ cmake_minimum_required(VERSION 3.22)
 project(app LANGUAGES CXX OBJCXX)
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(app main.cpp Application.cpp)
+add_executable(app
+    src/main.cpp
+    src/Application.cpp
+)
 
 set(DAWN_FETCH_DEPENDENCIES ON)
-add_subdirectory("dawn" EXCLUDE_FROM_ALL)
+add_subdirectory("external/dawn" EXCLUDE_FROM_ALL)
 
 include(cmake/imgui.cmake)
 target_link_libraries(app PRIVATE imgui)
