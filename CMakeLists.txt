@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(app
     src/main.cpp
     src/Application.cpp
+    src/Util.cpp
+)
+
+target_compile_definitions(app PRIVATE
+    RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
 )
 
 set(DAWN_FETCH_DEPENDENCIES ON)

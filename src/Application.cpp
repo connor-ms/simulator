@@ -4,16 +4,7 @@
 #include <backends/imgui_impl_wgpu.h>
 #include <backends/imgui_impl_glfw.h>
 
-const char shaderCode[] = R"(
-    @vertex fn vertexMain(@builtin(vertex_index) i : u32) ->
-      @builtin(position) vec4f {
-        const pos = array(vec2f(0, 1), vec2f(-1, -1), vec2f(1, -1));
-        return vec4f(pos[i], 0, 1);
-    }
-    @fragment fn fragmentMain() -> @location(0) vec4f {
-        return vec4f(1, 0, 0, 1);
-    }
-)";
+#include "Util.h"
 
 void Application::Render()
 {
@@ -24,15 +15,7 @@ void Application::Render()
 
     wgpu::RenderPassDescriptor renderpass{.colorAttachmentCount = 1, .colorAttachments = &attachment};
 
-    std::cout << "frame" << std::endl;
-
-    // ImGui::Begin("Hello, world!");
-    // ImGui::Text("This is some useful text.");
-    // if (ImGui::Button("Click me"))
-    // {
-    //     std::cout << "clicked" << std::endl;
-    // }
-    // ImGui::End();
+    // std::cout << "frame" << std::endl;
 
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
@@ -253,10 +236,11 @@ void applyTheme()
 bool Application::initRenderPipeline()
 {
     std::cout << "Creating render pipeline" << std::endl;
-    wgpu::ShaderSourceWGSL wgsl{{.code = shaderCode}};
+    // wgpu::ShaderSourceWGSL wgsl{{.code = shaderCode}};
 
-    wgpu::ShaderModuleDescriptor shaderModuleDescriptor{.nextInChain = &wgsl};
-    wgpu::ShaderModule shaderModule = m_device.CreateShaderModule(&shaderModuleDescriptor);
+    // wgpu::ShaderModuleDescriptor shaderModuleDescriptor{.nextInChain = &wgsl};
+    // wgpu::ShaderModule shaderModule = m_device.CreateShaderModule(&shaderModuleDescriptor);
+    wgpu::ShaderModule shaderModule = Util::loadShaderModule(RESOURCE_DIR "/shader.wgsl", m_device);
 
     wgpu::ColorTargetState colorTargetState{.format = m_format};
 
