@@ -6,6 +6,7 @@ add_executable(app
     src/main.cpp
     src/Application.cpp
     src/Util.cpp
+    src/GUI.cpp
 )
 
 target_compile_definitions(app PRIVATE

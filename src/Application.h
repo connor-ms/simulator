@@ -10,6 +10,8 @@
 #include <webgpu/webgpu_cpp.h>
 #include <webgpu/webgpu_glfw.h>
 
+#include "GUI.h"
+
 class Application
 {
 public:
@@ -29,10 +31,6 @@ private:
     bool initSurface();
     bool initRenderPipeline();
 
-    bool initGui();
-    void terminateGui();
-    void updateGui(wgpu::RenderPassEncoder encoder);
-
     void Render();
 
 private:
@@ -43,6 +41,10 @@ private:
     wgpu::RenderPipeline m_pipeline;
     wgpu::Surface m_surface;
     wgpu::TextureFormat m_format;
+
+    wgpu::Buffer m_vb;
+
+    GUI m_Gui;
 
     const uint32_t m_kWidth = 512;
     const uint32_t m_kHeight = 512;

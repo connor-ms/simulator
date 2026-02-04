@@ -1,10 +1,32 @@
 #include "Application.h"
-
-#include <imgui.h>
-#include <backends/imgui_impl_wgpu.h>
-#include <backends/imgui_impl_glfw.h>
-
 #include "Util.h"
+
+struct Vertex
+{
+    float pos[2];
+    float uv[2];
+};
+
+static const Vertex quad[] = {
+    {{-1, -1}, {0, 0}},
+    {{1, -1}, {1, 0}},
+    {{1, 1}, {1, 1}},
+    {{-1, -1}, {0, 0}},
+    {{1, 1}, {1, 1}},
+    {{-1, 1}, {0, 1}},
+};
+
+wgpu::Buffer CreateVertexBuffer(
+    wgpu::Device device)
+{
+    wgpu::BufferDescriptor desc{};
+    desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+    desc.size = sizeof(quad);
+
+    wgpu::Buffer buffer = device.CreateBuffer(&desc);
+    device.GetQueue().WriteBuffer(buffer, 0, quad, sizeof(quad));
+    return buffer;
+}
 
 void Application::Render()
 {
@@ -15,15 +37,14 @@ void Application::Render()
 
     wgpu::RenderPassDescriptor renderpass{.colorAttachmentCount = 1, .colorAttachments = &attachment};
 
-    // std::cout << "frame" << std::endl;
-
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
 
     pass.SetPipeline(m_pipeline);
+    pass.SetVertexBuffer(0, m_vb);
     pass.Draw(3);
 
-    updateGui(pass);
+    m_Gui.update(pass);
 
     pass.End();
 
@@ -146,90 +167,6 @@ bool Application::initSurface()
     return true;
 }
 
-void applyTheme()
-{
-    // clang-format off
-    ImVec4* colors = ImGui::GetStyle().Colors;
-    colors[ImGuiCol_Text]                   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_TextDisabled]           = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg]               = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
-    colors[ImGuiCol_ChildBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_PopupBg]                = ImVec4(0.19f, 0.19f, 0.19f, 0.92f);
-    colors[ImGuiCol_Border]                 = ImVec4(0.19f, 0.19f, 0.19f, 0.29f);
-    colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.24f);
-    colors[ImGuiCol_FrameBg]                = ImVec4(0.05f, 0.05f, 0.05f, 0.54f);
-    colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.19f, 0.19f, 0.19f, 0.54f);
-    colors[ImGuiCol_FrameBgActive]          = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
-    colors[ImGuiCol_TitleBg]                = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-    colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_MenuBarBg]              = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_ScrollbarBg]            = ImVec4(0.05f, 0.05f, 0.05f, 0.54f);
-    colors[ImGuiCol_ScrollbarGrab]          = ImVec4(0.34f, 0.34f, 0.34f, 0.54f);
-    colors[ImGuiCol_ScrollbarGrabHovered]   = ImVec4(0.40f, 0.40f, 0.40f, 0.54f);
-    colors[ImGuiCol_ScrollbarGrabActive]    = ImVec4(0.56f, 0.56f, 0.56f, 0.54f);
-    colors[ImGuiCol_CheckMark]              = ImVec4(0.33f, 0.67f, 0.86f, 1.00f);
-    colors[ImGuiCol_SliderGrab]             = ImVec4(0.34f, 0.34f, 0.34f, 0.54f);
-    colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.56f, 0.56f, 0.56f, 0.54f);
-    colors[ImGuiCol_Button]                 = ImVec4(0.05f, 0.05f, 0.05f, 0.54f);
-    colors[ImGuiCol_ButtonHovered]          = ImVec4(0.19f, 0.19f, 0.19f, 0.54f);
-    colors[ImGuiCol_ButtonActive]           = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
-    colors[ImGuiCol_Header]                 = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
-    colors[ImGuiCol_HeaderHovered]          = ImVec4(0.00f, 0.00f, 0.00f, 0.36f);
-    colors[ImGuiCol_HeaderActive]           = ImVec4(0.20f, 0.22f, 0.23f, 0.33f);
-    colors[ImGuiCol_Separator]              = ImVec4(0.28f, 0.28f, 0.28f, 0.29f);
-    colors[ImGuiCol_SeparatorHovered]       = ImVec4(0.44f, 0.44f, 0.44f, 0.29f);
-    colors[ImGuiCol_SeparatorActive]        = ImVec4(0.40f, 0.44f, 0.47f, 1.00f);
-    colors[ImGuiCol_ResizeGrip]             = ImVec4(0.28f, 0.28f, 0.28f, 0.29f);
-    colors[ImGuiCol_ResizeGripHovered]      = ImVec4(0.44f, 0.44f, 0.44f, 0.29f);
-    colors[ImGuiCol_ResizeGripActive]       = ImVec4(0.40f, 0.44f, 0.47f, 1.00f);
-    colors[ImGuiCol_Tab]                    = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
-    colors[ImGuiCol_TabHovered]             = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_TabActive]              = ImVec4(0.20f, 0.20f, 0.20f, 0.36f);
-    colors[ImGuiCol_TabUnfocused]           = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
-    colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_PlotLines]              = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_PlotLinesHovered]       = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_PlotHistogram]          = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_PlotHistogramHovered]   = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_TableHeaderBg]          = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
-    colors[ImGuiCol_TableBorderStrong]      = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
-    colors[ImGuiCol_TableBorderLight]       = ImVec4(0.28f, 0.28f, 0.28f, 0.29f);
-    colors[ImGuiCol_TableRowBg]             = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_TableRowBgAlt]          = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
-    colors[ImGuiCol_TextSelectedBg]         = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
-    colors[ImGuiCol_DragDropTarget]         = ImVec4(0.33f, 0.67f, 0.86f, 1.00f);
-    colors[ImGuiCol_NavHighlight]           = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 0.00f, 0.00f, 0.70f);
-    colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(1.00f, 0.00f, 0.00f, 0.20f);
-    colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(1.00f, 0.00f, 0.00f, 0.35f);
-
-    ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowPadding                     = ImVec2(8.00f, 8.00f);
-    style.FramePadding                      = ImVec2(5.00f, 2.00f);
-    style.CellPadding                       = ImVec2(6.00f, 6.00f);
-    style.ItemSpacing                       = ImVec2(6.00f, 6.00f);
-    style.ItemInnerSpacing                  = ImVec2(6.00f, 6.00f);
-    style.TouchExtraPadding                 = ImVec2(0.00f, 0.00f);
-    style.IndentSpacing                     = 25;
-    style.ScrollbarSize                     = 15;
-    style.GrabMinSize                       = 10;
-    style.WindowBorderSize                  = 1;
-    style.ChildBorderSize                   = 1;
-    style.PopupBorderSize                   = 1;
-    style.FrameBorderSize                   = 1;
-    style.TabBorderSize                     = 1;
-    style.WindowRounding                    = 7;
-    style.ChildRounding                     = 4;
-    style.FrameRounding                     = 3;
-    style.PopupRounding                     = 4;
-    style.ScrollbarRounding                 = 9;
-    style.GrabRounding                      = 3;
-    style.LogSliderDeadzone                 = 4;
-    style.TabRounding                       = 4;
-    // clang-format on
-}
-
 bool Application::initRenderPipeline()
 {
     std::cout << "Creating render pipeline" << std::endl;
@@ -239,69 +176,50 @@ bool Application::initRenderPipeline()
     // wgpu::ShaderModule shaderModule = m_device.CreateShaderModule(&shaderModuleDescriptor);
     wgpu::ShaderModule shaderModule = Util::loadShaderModule(RESOURCE_DIR "/shader.wgsl", m_device);
 
+    wgpu::VertexAttribute attrs[2];
+    attrs[0].shaderLocation = 0;
+    attrs[0].format = wgpu::VertexFormat::Float32x2;
+    attrs[0].offset = 0;
+
+    attrs[1].shaderLocation = 1;
+    attrs[1].format = wgpu::VertexFormat::Float32x2;
+    attrs[1].offset = sizeof(float) * 2;
+
+    wgpu::VertexBufferLayout vbl{};
+    vbl.arrayStride = sizeof(Vertex);
+    vbl.attributeCount = 2;
+    vbl.attributes = attrs;
+
     wgpu::ColorTargetState colorTargetState{.format = m_format};
 
-    wgpu::FragmentState fragmentState{.module = shaderModule, .targetCount = 1, .targets = &colorTargetState};
+    // wgpu::FragmentState fragmentState{.module = shaderModule, .targetCount = 1, .targets = &colorTargetState};
 
-    wgpu::RenderPipelineDescriptor descriptor{.vertex = {.module = shaderModule}, .fragment = &fragmentState};
-    m_pipeline = m_device.CreateRenderPipeline(&descriptor);
+    wgpu::RenderPipelineDescriptor rp{};
+    rp.vertex.module = shaderModule;
+    rp.vertex.entryPoint = "vs_main";
+    rp.vertex.bufferCount = 1;
+    rp.vertex.buffers = &vbl;
+
+    wgpu::ColorTargetState colorTarget{};
+    colorTarget.format = m_format;
+    colorTarget.writeMask = wgpu::ColorWriteMask::All;
+
+    wgpu::FragmentState frag{};
+    frag.module = shaderModule;
+    frag.entryPoint = "fs_main";
+    frag.targetCount = 1;
+    frag.targets = &colorTarget;
+
+    rp.fragment = &frag;
+    rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+    rp.primitive.cullMode = wgpu::CullMode::None;
+
+    // wgpu::RenderPipelineDescriptor descriptor{.vertex = {.module = shaderModule}, .fragment = &fragmentState};
+    // m_pipeline = m_device.CreateRenderPipeline(&descriptor);
+    m_pipeline = m_device.CreateRenderPipeline(&rp);
     std::cout << "Render pipeline created";
 
     return m_pipeline != nullptr;
-}
-
-bool Application::initGui()
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::GetIO();
-
-    applyTheme();
-
-    ImGui_ImplWGPU_InitInfo info = {};
-    info.Device = m_device.Get();
-    info.RenderTargetFormat = static_cast<WGPUTextureFormat>(m_format);
-
-    ImGui_ImplGlfw_InitForOther(m_window, true);
-    ImGui_ImplWGPU_Init(&info);
-    return true;
-}
-
-void Application::updateGui(wgpu::RenderPassEncoder encoder)
-{
-    ImGui_ImplWGPU_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    {
-        static float f = 0.0f;
-        static int counter = 0;
-        static bool show_demo_window = true;
-        static bool show_another_window = false;
-        static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-        ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-        ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
-        ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGuiIO &io = ImGui::GetIO();
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
-    }
-
-    ImGui::EndFrame();
-    ImGui::Render();
-    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), encoder.Get());
 }
 
 void Application::onResize(uint32_t width, uint32_t height)
@@ -332,8 +250,12 @@ bool Application::onInit()
     if (!initRenderPipeline())
         return false;
 
-    if (!initGui())
+    m_Gui = GUI();
+
+    if (!m_Gui.init(m_device, m_format, m_window))
         return false;
+
+    m_vb = CreateVertexBuffer(m_device);
 
     return true;
 }
