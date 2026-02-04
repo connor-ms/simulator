@@ -50,10 +50,10 @@ bool Application::initWindow()
 
     // clang-format off
     glfwSetWindowUserPointer(m_window, this);
-    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow *window, int, int)
+    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow *window, int width, int height)
     {
         auto that = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-        if (that != nullptr) that->onResize();
+        if (that != nullptr) that->onResize(width, height);
     });
     glfwSetCursorPosCallback(m_window, [](GLFWwindow *window, double xpos, double ypos)
     {
@@ -139,10 +139,7 @@ bool Application::initSurface()
     m_surface.GetCapabilities(m_adapter, &capabilities);
     m_format = capabilities.formats[0];
 
-    int width, height;
-    glfwGetFramebufferSize(m_window, &width, &height);
-
-    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
+    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = m_kWidth, .height = m_kHeight};
     m_surface.Configure(&config);
     std::cout << "Surface created: " << m_surface.Get() << std::endl;
 
@@ -307,9 +304,13 @@ void Application::updateGui(wgpu::RenderPassEncoder encoder)
     ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), encoder.Get());
 }
 
-void Application::onResize()
+void Application::onResize(uint32_t width, uint32_t height)
 {
-    initSurface();
+    if (width == 0 || height == 0)
+        return;
+
+    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = width, .height = height};
+    m_surface.Configure(&config);
 }
 
 bool Application::isRunning()
