@@ -160,7 +160,10 @@ bool Application::initSurface()
     m_surface.GetCapabilities(m_adapter, &capabilities);
     m_format = capabilities.formats[0];
 
-    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = m_kWidth, .height = m_kHeight};
+    int width, height;
+    glfwGetFramebufferSize(m_window, &width, &height);
+
+    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
     m_surface.Configure(&config);
     std::cout << "Surface created: " << m_surface.Get() << std::endl;
 
