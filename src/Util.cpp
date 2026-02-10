@@ -8,7 +8,7 @@ wgpu::ShaderModule Util::loadShaderModule(const std::filesystem::path &path, wgp
     std::ifstream file(path);
     if (!file.is_open())
     {
-        std::cerr << "Failed to open shader file " << path << std::endl;
+        std::cout << "Failed to open shader file " << path << std::endl;
         return nullptr;
     }
 

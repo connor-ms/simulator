@@ -22,7 +22,11 @@ target_link_libraries(app PRIVATE imgui)
 if(EMSCRIPTEN)
     set_target_properties(app PROPERTIES SUFFIX ".html")
     target_link_libraries(app PRIVATE emdawnwebgpu_cpp webgpu_glfw)
-    target_link_options(app PRIVATE "-sASYNCIFY=1" "-sUSE_GLFW=3")
+    target_link_options(app PRIVATE
+        "-sASYNCIFY=1"
+        "-sUSE_GLFW=3"
+        --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+    )
 else()
     target_link_libraries(app PRIVATE webgpu_dawn webgpu_glfw glfw)
 endif()

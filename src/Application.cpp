@@ -88,7 +88,7 @@ bool Application::initWindow()
 {
     if (!glfwInit())
     {
-        std::cerr << "Failed to initialize GLFW!" << std::endl;
+        std::cout << "Failed to initialize GLFW!" << std::endl;
         return false;
     }
 
@@ -97,7 +97,7 @@ bool Application::initWindow()
 
     if (!m_window)
     {
-        std::cerr << "Failed to create window!" << std::endl;
+        std::cout << "Failed to create window!" << std::endl;
         return false;
     }
 
@@ -136,7 +136,7 @@ bool Application::initInstance()
 
     if (!m_instance)
     {
-        std::cerr << "Failed to initialize WebGPU!" << std::endl;
+        std::cout << "Failed to initialize WebGPU!" << std::endl;
         return false;
     }
 
@@ -147,7 +147,7 @@ bool Application::initInstance()
         {
             if (status != wgpu::RequestAdapterStatus::Success)
             {
-                std::cout << "Failed: " << message << std::endl;
+                std::cout << "Failed: " << message.data << std::endl;
                 exit(0);
             }
             m_adapter = std::move(adapter);
@@ -160,7 +160,7 @@ bool Application::initInstance()
     desc.SetUncapturedErrorCallback(
         [](const wgpu::Device &, wgpu::ErrorType errorType, wgpu::StringView message)
         {
-            std::cout << "Device error: " << errorType << " - message: " << message << std::endl;
+            std::cout << "Device error: - message: " << message.data << std::endl;
         });
 
     wgpu::Future f2 = m_adapter.RequestDevice(
@@ -169,7 +169,7 @@ bool Application::initInstance()
         {
             if (status != wgpu::RequestDeviceStatus::Success)
             {
-                std::cout << "Failed: " << message << "\n";
+                std::cout << "Failed: " << message.data << "\n";
                 exit(0);
             }
             m_device = std::move(device);
@@ -215,7 +215,7 @@ void Application::initBindGroupLayout()
     m_computeBindGroupLayout = m_device.CreateBindGroupLayout(&computeDesc);
 
     if (!m_computeBindGroupLayout)
-        std::cerr << "ERROR: Failed to create compute bind group layout!" << std::endl;
+        std::cout << "ERROR: Failed to create compute bind group layout!" << std::endl;
 
     // Render layout
     wgpu::BindGroupLayoutEntry renderEntry{};
@@ -229,7 +229,7 @@ void Application::initBindGroupLayout()
     m_renderBindGroupLayout = m_device.CreateBindGroupLayout(&renderDesc);
 
     if (!m_renderBindGroupLayout)
-        std::cerr << "ERROR: Failed to create render bind group layout!" << std::endl;
+        std::cout << "ERROR: Failed to create render bind group layout!" << std::endl;
 
     std::cout << "initBindGroupLayout Done" << std::endl;
 }
@@ -283,7 +283,7 @@ void Application::initBindGroup()
     m_computeBindGroup = m_device.CreateBindGroup(&computeDesc);
 
     if (!m_computeBindGroup)
-        std::cerr << "ERROR: Failed to create compute bind group!" << std::endl;
+        std::cout << "ERROR: Failed to create compute bind group!" << std::endl;
 
     // Render bind group
     wgpu::BindGroupEntry renderEntry{};
@@ -299,7 +299,7 @@ void Application::initBindGroup()
     m_renderBindGroup = m_device.CreateBindGroup(&renderDesc);
 
     if (!m_renderBindGroup)
-        std::cerr << "ERROR: Failed to create render bind group!" << std::endl;
+        std::cout << "ERROR: Failed to create render bind group!" << std::endl;
 
     std::cout << "initBindGroup Done" << std::endl;
 }
@@ -311,7 +311,7 @@ bool Application::initRenderPipeline()
     wgpu::ShaderModule shaderModule = Util::loadShaderModule(RESOURCE_DIR "/shader.wgsl", m_device);
     if (!shaderModule)
     {
-        std::cerr << "ERROR: Failed to load shader.wgsl!" << std::endl;
+        std::cout << "ERROR: Failed to load shader.wgsl!" << std::endl;
         return false;
     }
 
@@ -362,7 +362,7 @@ bool Application::initRenderPipeline()
 
     if (!m_pipeline)
     {
-        std::cerr << "ERROR: Failed to create render pipeline!" << std::endl;
+        std::cout << "ERROR: Failed to create render pipeline!" << std::endl;
         return false;
     }
     std::cout << "Render pipeline created" << std::endl;
@@ -402,7 +402,7 @@ bool Application::initRenderPipeline()
     m_pWorld = m_device.CreateRenderPipeline(&rp2);
     if (!m_pWorld)
     {
-        std::cerr << "ERROR: Failed to create world pipeline!" << std::endl;
+        std::cout << "ERROR: Failed to create world pipeline!" << std::endl;
         return false;
     }
     std::cout << "World render pipeline created" << std::endl;
@@ -418,13 +418,13 @@ bool Application::initCompute()
 
     if (!computeShaderModule)
     {
-        std::cerr << "ERROR: Failed to load compute.wgsl!" << std::endl;
+        std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
         return false;
     }
 
     if (!m_computeBindGroupLayout)
     {
-        std::cerr << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
+        std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
         return false;
     }
 
@@ -435,7 +435,7 @@ bool Application::initCompute()
 
     if (!m_computePipelineLayout)
     {
-        std::cerr << "ERROR: Failed to create compute pipeline layout!" << std::endl;
+        std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
         return false;
     }
 
@@ -447,7 +447,7 @@ bool Application::initCompute()
     m_computePipeline = m_device.CreateComputePipeline(&cpDesc);
     if (!m_computePipeline)
     {
-        std::cerr << "ERROR: Failed to create compute pipeline!" << std::endl;
+        std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
         return false;
     }
 
@@ -492,8 +492,8 @@ void Application::onFrame()
     Render();
 #ifndef __EMSCRIPTEN__
     m_surface.Present();
-#endif
     m_device.Tick();
+#endif
 }
 
 void Application::onResize(uint32_t width, uint32_t height)

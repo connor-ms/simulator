@@ -6,7 +6,6 @@
 
 #include <webgpu/webgpu_cpp.h>
 #include <webgpu/webgpu_glfw.h>
-#include <webgpu/webgpu_cpp_print.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vector>

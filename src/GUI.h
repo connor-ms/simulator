@@ -1,6 +1,11 @@
 #pragma once
 
-#include <dawn/webgpu_cpp.h>
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#endif
+
+#include <webgpu/webgpu_cpp.h>
+#include <webgpu/webgpu_glfw.h>
 #include <GLFW/glfw3.h>
 
 class GUI
