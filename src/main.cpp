@@ -22,6 +22,8 @@ int main()
     }
 #endif
 
+    // app->onCompute();
+
     // app.onFinish();
 
     return 0;

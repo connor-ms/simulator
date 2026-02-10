@@ -17,7 +17,8 @@ class Application
 public:
     bool onInit();
     void onFrame();
-    void onFinish();
+    void onCompute();
+    void onFinish() {};
     bool isRunning();
 
     void onResize(uint32_t width, uint32_t height);
@@ -30,6 +31,10 @@ private:
     bool initInstance();
     bool initSurface();
     bool initRenderPipeline();
+    bool initBuffers();
+    bool initCompute();
+    void initBindGroupLayout();
+    void initBindGroup();
 
     void Render();
 
@@ -38,11 +43,26 @@ private:
     wgpu::Instance m_instance;
     wgpu::Adapter m_adapter;
     wgpu::Device m_device;
-    wgpu::RenderPipeline m_pipeline;
     wgpu::Surface m_surface;
     wgpu::TextureFormat m_format;
 
+    wgpu::RenderPipeline m_pipeline;
     wgpu::Buffer m_vb;
+    wgpu::Buffer m_ib;
+    wgpu::Buffer m_uniformBuffer;
+
+    wgpu::RenderPipeline m_pWorld;
+    wgpu::Buffer m_worldbuf;
+
+    wgpu::ComputePipeline m_computePipeline;
+    wgpu::BindGroupLayout m_bindGroupLayout;
+    wgpu::PipelineLayout m_pipelineLayout;
+    float m_bufferSize;
+    wgpu::Buffer m_inputBuffer;
+    wgpu::Buffer m_outputBuffer;
+    wgpu::Buffer m_mapBuffer;
+    wgpu::BindGroup m_bindGroup;
+    std::vector<float> m_input;
 
     GUI m_Gui;
 
