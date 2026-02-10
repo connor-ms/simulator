@@ -4,21 +4,25 @@ struct VertexOut
     @location(0) uv : vec2<f32>,
 };
 
-// struct Instance
-// {
-//     center: vec2<f32>,
-//     radius: f32,
-// };
+struct Particle
+{
+    center: vec2<f32>,
+    radius: f32,
+    _pad: f32,
+};
+
+@group(0) @binding(0) var<storage, read> particles: array<Particle>;
 
 @vertex
 fn vs_main(@location(0) pos : vec2<f32>,
            @location(1) uv : vec2<f32>,
-           @location(2) center: vec2<f32>,
-           @location(3) radius: f32) -> VertexOut
+           @builtin(instance_index) instanceIndex: u32) -> VertexOut
 {
-    var out : VertexOut;
+    var out: VertexOut;
 
-    let worldPos = center + pos * radius;
+    let particle = particles[instanceIndex];
+
+    let worldPos = particle.center + pos * particle.radius;
     out.position = vec4<f32>(worldPos, 0.0, 1.0);
     out.uv = uv;
     
