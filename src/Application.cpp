@@ -1,5 +1,7 @@
 #include "Application.h"
 #include "Util.h"
+#include <glm/glm.hpp>
+#include <random>
 
 struct Particle
 {
@@ -31,6 +33,8 @@ float wrld[] = {
 };
 // clang-format on
 
+int instanceCount = 10000;
+
 std::vector<Particle> instances = {
     {{-0.5f, 0.0f}, 0.01f, 0.0f},
     {{0.0f, 0.3f}, 0.01f, 0.0f},
@@ -42,6 +46,8 @@ void Application::Render()
     wgpu::SurfaceTexture surfaceTexture;
     m_surface.GetCurrentTexture(&surfaceTexture);
 
+    m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
+
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
 
     // Begin compute pass
@@ -50,7 +56,8 @@ void Application::Render()
 
     wgpu::ComputePassEncoder computePass = encoder.BeginComputePass(&computePassDesc);
     computePass.SetPipeline(m_computePipeline);
-    computePass.SetBindGroup(0, m_computeBindGroup); // read_write
+    computePass.SetBindGroup(0, m_globalBindGroup);
+    computePass.SetBindGroup(1, m_computeBindGroup);
 
     uint32_t workgroupSize = 32;
     uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
@@ -70,13 +77,22 @@ void Application::Render()
     renderpass.colorAttachments = &attachment;
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
-    pass.SetPipeline(m_pipeline);
-    pass.SetBindGroup(0, m_renderBindGroup);
-    pass.SetVertexBuffer(0, m_vb);
 
+    // Draw particles
+    pass.SetPipeline(m_pipeline);
+    pass.SetBindGroup(0, m_globalBindGroup);
+    pass.SetBindGroup(1, m_renderBindGroup);
+    pass.SetVertexBuffer(0, m_vb);
     pass.Draw(6, static_cast<uint32_t>(instances.size()));
 
+    // Draw world bounds
+    pass.SetPipeline(m_pWorld);
+    pass.SetBindGroup(0, m_globalBindGroup);
+    pass.SetVertexBuffer(0, m_worldbuf);
+    // pass.Draw(6, sizeof(wrld));
+
     m_Gui.update(pass);
+
     pass.End();
     // End render pass
 
@@ -231,6 +247,20 @@ void Application::initBindGroupLayout()
     if (!m_renderBindGroupLayout)
         std::cout << "ERROR: Failed to create render bind group layout!" << std::endl;
 
+    // Global layout
+    wgpu::BindGroupLayoutEntry globalEntry{};
+    globalEntry.binding = 0;
+    globalEntry.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment | wgpu::ShaderStage::Compute;
+    globalEntry.buffer.type = wgpu::BufferBindingType::Uniform;
+
+    wgpu::BindGroupLayoutDescriptor globalDesc{};
+    globalDesc.entryCount = 1;
+    globalDesc.entries = &globalEntry;
+    m_globalBindGroupLayout = m_device.CreateBindGroupLayout(&globalDesc);
+
+    if (!m_globalBindGroupLayout)
+        std::cout << "ERROR: Failed to create global bind group layout!" << std::endl;
+
     std::cout << "initBindGroupLayout Done" << std::endl;
 }
 
@@ -260,6 +290,12 @@ bool Application::initBuffers()
     wvbDesc.size = sizeof(wrld);
     m_worldbuf = m_device.CreateBuffer(&wvbDesc);
     m_device.GetQueue().WriteBuffer(m_worldbuf, 0, wrld, sizeof(wrld));
+
+    // Global buffer
+    wgpu::BufferDescriptor gDesc{};
+    gDesc.size = sizeof(Globals);
+    gDesc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+    m_globalBuffer = m_device.CreateBuffer(&gDesc);
 
     return m_vb != nullptr && m_particleBuffer != nullptr && m_worldbuf != nullptr;
 }
@@ -301,6 +337,22 @@ void Application::initBindGroup()
     if (!m_renderBindGroup)
         std::cout << "ERROR: Failed to create render bind group!" << std::endl;
 
+    // Global bind group
+    wgpu::BindGroupEntry globalEntry{};
+    globalEntry.binding = 0;
+    globalEntry.buffer = m_globalBuffer;
+    globalEntry.offset = 0;
+    globalEntry.size = sizeof(Globals);
+
+    wgpu::BindGroupDescriptor globalDesc{};
+    globalDesc.layout = m_globalBindGroupLayout;
+    globalDesc.entryCount = 1;
+    globalDesc.entries = &globalEntry;
+    m_globalBindGroup = m_device.CreateBindGroup(&globalDesc);
+
+    if (!m_renderBindGroup)
+        std::cout << "ERROR: Failed to create global bind group!" << std::endl;
+
     std::cout << "initBindGroup Done" << std::endl;
 }
 
@@ -333,9 +385,14 @@ bool Application::initRenderPipeline()
     vbl.attributeCount = 2;
     vbl.attributes = attrs;
 
+    wgpu::BindGroupLayout layouts[] = {
+        m_globalBindGroupLayout,
+        m_renderBindGroupLayout,
+    };
+
     wgpu::PipelineLayoutDescriptor plDesc{};
-    plDesc.bindGroupLayoutCount = 1;
-    plDesc.bindGroupLayouts = &m_renderBindGroupLayout;
+    plDesc.bindGroupLayoutCount = 2;
+    plDesc.bindGroupLayouts = layouts;
     wgpu::PipelineLayout renderPipelineLayout = m_device.CreatePipelineLayout(&plDesc);
 
     wgpu::ColorTargetState colorTarget{};
@@ -390,8 +447,14 @@ bool Application::initRenderPipeline()
     frag2.targetCount = 1;
     frag2.targets = &wrldColorTarget;
 
+    wgpu::PipelineLayoutDescriptor wplDesc{};
+    wplDesc.bindGroupLayoutCount = 1;
+    wplDesc.bindGroupLayouts = &m_globalBindGroupLayout;
+    wgpu::PipelineLayout wrenderPipelineLayout = m_device.CreatePipelineLayout(&wplDesc);
+
     wgpu::RenderPipelineDescriptor rp2{};
     rp2.vertex.module = worldShader;
+    rp2.layout = wrenderPipelineLayout;
     rp2.vertex.entryPoint = "vs_main";
     rp2.vertex.bufferCount = 1;
     rp2.vertex.buffers = &wrldVBL;
@@ -428,9 +491,14 @@ bool Application::initCompute()
         return false;
     }
 
+    wgpu::BindGroupLayout layouts[] = {
+        m_globalBindGroupLayout,
+        m_computeBindGroupLayout,
+    };
+
     wgpu::PipelineLayoutDescriptor plDesc{};
-    plDesc.bindGroupLayoutCount = 1;
-    plDesc.bindGroupLayouts = &m_computeBindGroupLayout;
+    plDesc.bindGroupLayoutCount = 2;
+    plDesc.bindGroupLayouts = layouts;
     m_computePipelineLayout = m_device.CreatePipelineLayout(&plDesc);
 
     if (!m_computePipelineLayout)
@@ -457,6 +525,20 @@ bool Application::initCompute()
 
 bool Application::onInit()
 {
+    m_globals = Globals{
+        .height = 512,
+        .width = 512,
+        ._pad1 = 0.f,
+        ._pad2 = 0.f,
+    };
+
+    std::random_device randd;
+    std::mt19937 generator(rand());
+    std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+
+    for (int i = 0; i < instanceCount; i++)
+        instances.push_back({{dist(generator), dist(generator)}, 0.01f, 0.0f});
+
     if (!initWindow())
         return false;
 
@@ -503,6 +585,9 @@ void Application::onResize(uint32_t width, uint32_t height)
 
     wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = width, .height = height};
     m_surface.Configure(&config);
+
+    m_globals.height = height;
+    m_globals.width = width;
 }
 
 bool Application::isRunning()

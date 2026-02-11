@@ -12,6 +12,14 @@
 
 #include "GUI.h"
 
+struct Globals
+{
+    float height;
+    float width;
+    float _pad1;
+    float _pad2;
+};
+
 class Application
 {
 public:
@@ -48,6 +56,7 @@ private:
     wgpu::Buffer m_vb;
     wgpu::Buffer m_worldbuf;
     wgpu::Buffer m_particleBuffer;
+    wgpu::Buffer m_globalBuffer;
 
     wgpu::BindGroupLayout m_computeBindGroupLayout;
     wgpu::BindGroup m_computeBindGroup;
@@ -59,5 +68,9 @@ private:
     wgpu::RenderPipeline m_pipeline;
     wgpu::RenderPipeline m_pWorld;
 
+    wgpu::BindGroupLayout m_globalBindGroupLayout;
+    wgpu::BindGroup m_globalBindGroup;
+
     GUI m_Gui;
+    Globals m_globals;
 };
