@@ -7,6 +7,7 @@
 #include <webgpu/webgpu_cpp.h>
 #include <webgpu/webgpu_glfw.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <vector>
 
@@ -14,10 +15,10 @@
 
 struct Globals
 {
-    float height;
-    float width;
-    float _pad1;
-    float _pad2;
+    glm::vec2 windowSize;
+    glm::vec3 worldSize;
+    glm::vec3 _pad;
+    glm::vec4 _pad2;
 };
 
 class Application

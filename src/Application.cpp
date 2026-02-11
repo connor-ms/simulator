@@ -1,6 +1,5 @@
 #include "Application.h"
 #include "Util.h"
-#include <glm/glm.hpp>
 #include <random>
 
 struct Particle
@@ -59,7 +58,7 @@ void Application::Render()
     computePass.SetBindGroup(0, m_globalBindGroup);
     computePass.SetBindGroup(1, m_computeBindGroup);
 
-    uint32_t workgroupSize = 32;
+    uint32_t workgroupSize = 48;
     uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
     computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
@@ -273,6 +272,7 @@ bool Application::initBuffers()
     vbDesc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
     vbDesc.size = sizeof(vertices);
     vbDesc.mappedAtCreation = false;
+    vbDesc.label = "Quad";
     m_vb = m_device.CreateBuffer(&vbDesc);
     m_device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
 
@@ -281,6 +281,7 @@ bool Application::initBuffers()
     pbDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
     pbDesc.mappedAtCreation = false;
     pbDesc.size = instances.size() * sizeof(Particle);
+    pbDesc.label = "Particle";
     m_particleBuffer = m_device.CreateBuffer(&pbDesc);
     m_device.GetQueue().WriteBuffer(m_particleBuffer, 0, instances.data(), instances.size() * sizeof(Particle));
 
@@ -288,6 +289,7 @@ bool Application::initBuffers()
     wgpu::BufferDescriptor wvbDesc{};
     wvbDesc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
     wvbDesc.size = sizeof(wrld);
+    wvbDesc.label = "World";
     m_worldbuf = m_device.CreateBuffer(&wvbDesc);
     m_device.GetQueue().WriteBuffer(m_worldbuf, 0, wrld, sizeof(wrld));
 
@@ -295,6 +297,7 @@ bool Application::initBuffers()
     wgpu::BufferDescriptor gDesc{};
     gDesc.size = sizeof(Globals);
     gDesc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+    gDesc.label = "Global";
     m_globalBuffer = m_device.CreateBuffer(&gDesc);
 
     return m_vb != nullptr && m_particleBuffer != nullptr && m_worldbuf != nullptr;
@@ -525,11 +528,15 @@ bool Application::initCompute()
 
 bool Application::onInit()
 {
+
+    std::cout << sizeof(Globals) << std::endl;
+    std::cout << sizeof(glm::vec2) << std::endl;
+    std::cout << sizeof(glm::vec3) << std::endl;
+
     m_globals = Globals{
-        .height = 512,
-        .width = 512,
-        ._pad1 = 0.f,
-        ._pad2 = 0.f,
+        .windowSize = glm::vec2(512, 512),
+        .worldSize = glm::vec3(10, 10, 10),
+        ._pad = glm::vec3(),
     };
 
     std::random_device randd;
@@ -586,8 +593,8 @@ void Application::onResize(uint32_t width, uint32_t height)
     wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = width, .height = height};
     m_surface.Configure(&config);
 
-    m_globals.height = height;
-    m_globals.width = width;
+    m_globals.windowSize.y = width;
+    m_globals.windowSize.x = height;
 }
 
 bool Application::isRunning()

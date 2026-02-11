@@ -5,10 +5,9 @@ struct VertexOut
 
 struct Globals
 {
-    height: f32,
-    width: f32,
-    _pad1: f32,
-    _pad2: f32,
+    windowSize: vec2<f32>,
+    worldSize: vec3<f32>,
+    _pad: vec3<f32>
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;
@@ -17,7 +16,7 @@ struct Globals
 fn vs_main(@location(0) topLeft : vec2<f32>) -> VertexOut
 {
     var out : VertexOut;
-    let ratio = globals.width / globals.height;
+    let ratio = globals.windowSize.x / globals.windowSize.y;
     
     out.position = vec4<f32>(topLeft.x / ratio, topLeft.y, 0.0, 1.0);
 

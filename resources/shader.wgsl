@@ -13,10 +13,9 @@ struct Particle
 
 struct Globals
 {
-    height: f32,
-    width: f32,
-    _pad1: f32,
-    _pad2: f32
+    windowSize: vec2<f32>,
+    worldSize: vec4<f32>,
+    _pad: vec3<f32>
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;
@@ -27,7 +26,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
            @location(1) uv : vec2<f32>,
            @builtin(instance_index) instanceIndex: u32) -> VertexOut
 {
-    let ratio = globals.width / globals.height;
+    let ratio = globals.windowSize.y / globals.windowSize.x;
     var out: VertexOut;
 
     let particle = particles[instanceIndex];
