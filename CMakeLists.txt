@@ -35,6 +35,7 @@ if(EMSCRIPTEN)
     target_link_options(app PRIVATE
         "-sASYNCIFY=1"
         "-sUSE_GLFW=3"
+        "-sALLOW_MEMORY_GROWTH"
         --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/resources"
     )
 else()

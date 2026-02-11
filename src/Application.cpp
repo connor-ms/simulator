@@ -176,7 +176,7 @@ bool Application::initInstance()
     desc.SetUncapturedErrorCallback(
         [](const wgpu::Device &, wgpu::ErrorType errorType, wgpu::StringView message)
         {
-            std::cout << "Device error: - message: " << message.data << std::endl;
+            std::cout << "Device error: " << message.data << std::endl;
         });
 
     wgpu::Future f2 = m_adapter.RequestDevice(
