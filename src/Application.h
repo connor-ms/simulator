@@ -16,9 +16,9 @@
 struct Globals
 {
     glm::vec2 windowSize;
-    glm::vec3 worldSize;
-    glm::vec3 _pad;
-    glm::vec4 _pad2;
+    glm::vec2 _pad;
+    glm::vec4 worldSize;
+    glm::mat4x4 proj;
 };
 
 class Application

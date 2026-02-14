@@ -7,8 +7,8 @@ struct Particle {
 struct Globals
 {
     windowSize: vec2<f32>,
-    worldSize: vec4<f32>,
-    _pad: vec3<f32>
+    worldSize: vec3<f32>,
+    proj: mat4x4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;
@@ -18,9 +18,9 @@ struct Globals
 fn computeSomething(@builtin(global_invocation_id) id: vec3<u32>) {
     let i = id.x;
 
-    if (particles[i].center.y > -1) {
-        particles[i].center.y += -0.01;
+    if (particles[i].center.y > -globals.worldSize.y) {
+        particles[i].center.y += -1;
     } else {
-        particles[i].center.y = 1;
+        particles[i].center.y = globals.worldSize.y;
     }
 }

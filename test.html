@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: black; /* optional */
+            }
+
+            canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+        <script type="text/javascript">
+            var Module = {
+                canvas: (function () {
+                    return document.getElementById("canvas");
+                })(),
+            };
+        </script>
+
+        <script type="text/javascript">
+            var canvas = document.getElementById("canvas");
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                console.log("resize");
+            }
+
+            window.addEventListener("resize", resizeCanvas);
+            resizeCanvas();
+        </script>
+
+        {{{ SCRIPT }}}
+    </body>
+</html>

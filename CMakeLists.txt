@@ -37,6 +37,7 @@ if(EMSCRIPTEN)
         "-sUSE_GLFW=3"
         "-sALLOW_MEMORY_GROWTH"
         --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        --shell-file "${CMAKE_CURRENT_SOURCE_DIR}/test.html"
     )
 else()
     target_link_libraries(app PRIVATE webgpu_dawn webgpu_glfw glfw)

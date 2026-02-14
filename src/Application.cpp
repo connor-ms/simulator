@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Util.h"
 #include <random>
+#include <glm/ext/matrix_clip_space.hpp>
 
 struct Particle
 {
@@ -32,20 +33,13 @@ float wrld[] = {
 };
 // clang-format on
 
-int instanceCount = 10000;
-
-std::vector<Particle> instances = {
-    {{-0.5f, 0.0f}, 0.01f, 0.0f},
-    {{0.0f, 0.3f}, 0.01f, 0.0f},
-    {{0.4f, -0.2f}, 0.01f, 0.0f},
-};
+int instanceCount = 1000;
+std::vector<Particle> instances(instanceCount);
 
 void Application::Render()
 {
     wgpu::SurfaceTexture surfaceTexture;
     m_surface.GetCurrentTexture(&surfaceTexture);
-
-    m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
 
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
 
@@ -77,6 +71,15 @@ void Application::Render()
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
 
+    // int width, height;
+    // glfwGetFramebufferSize(m_window, &width, &height);
+
+    // pass.SetViewport(
+    //     0.0f, 0.0f,
+    //     (float)width,
+    //     (float)height,
+    //     0.0f, 1.0f);
+
     // Draw particles
     pass.SetPipeline(m_pipeline);
     pass.SetBindGroup(0, m_globalBindGroup);
@@ -88,7 +91,7 @@ void Application::Render()
     pass.SetPipeline(m_pWorld);
     pass.SetBindGroup(0, m_globalBindGroup);
     pass.SetVertexBuffer(0, m_worldbuf);
-    // pass.Draw(6, sizeof(wrld));
+    pass.Draw(6, sizeof(wrld));
 
     m_Gui.update(pass);
 
@@ -97,6 +100,7 @@ void Application::Render()
 
     wgpu::CommandBuffer commands = encoder.Finish();
     m_device.GetQueue().Submit(1, &commands);
+    // std::cout << "Frame" << std::endl;
 }
 
 bool Application::initWindow()
@@ -121,7 +125,9 @@ bool Application::initWindow()
     glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow *window, int width, int height)
     {
         auto that = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-        if (that != nullptr) that->onResize(width, height);
+        if (that != nullptr) {
+            that->onResize(width, height);
+        }
     });
     glfwSetCursorPosCallback(m_window, [](GLFWwindow *window, double xpos, double ypos)
     {
@@ -299,6 +305,7 @@ bool Application::initBuffers()
     gDesc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
     gDesc.label = "Global";
     m_globalBuffer = m_device.CreateBuffer(&gDesc);
+    m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
 
     return m_vb != nullptr && m_particleBuffer != nullptr && m_worldbuf != nullptr;
 }
@@ -514,6 +521,7 @@ bool Application::initCompute()
     cpDesc.layout = m_computePipelineLayout;
     cpDesc.compute.module = computeShaderModule;
     cpDesc.compute.entryPoint = "computeSomething";
+    cpDesc.label = "Compute";
 
     m_computePipeline = m_device.CreateComputePipeline(&cpDesc);
     if (!m_computePipeline)
@@ -528,26 +536,33 @@ bool Application::initCompute()
 
 bool Application::onInit()
 {
-
-    std::cout << sizeof(Globals) << std::endl;
-    std::cout << sizeof(glm::vec2) << std::endl;
-    std::cout << sizeof(glm::vec3) << std::endl;
-
-    m_globals = Globals{
-        .windowSize = glm::vec2(512, 512),
-        .worldSize = glm::vec3(10, 10, 10),
-        ._pad = glm::vec3(),
-    };
-
-    std::random_device randd;
-    std::mt19937 generator(rand());
-    std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-
-    for (int i = 0; i < instanceCount; i++)
-        instances.push_back({{dist(generator), dist(generator)}, 0.01f, 0.0f});
-
     if (!initWindow())
         return false;
+
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+
+    m_globals = Globals{
+        .windowSize = glm::vec2(fbWidth, fbHeight),
+        .worldSize = glm::vec4(256, 256, 256, 0),
+    };
+
+    float halfWidth = m_globals.windowSize.x * 0.5f;
+    float halfHeight = m_globals.windowSize.y * 0.5f;
+
+    m_globals.proj = glm::ortho(
+        -halfWidth,
+        halfWidth,
+        -halfHeight,
+        halfHeight,
+        -1.f, 1.f);
+
+    std::random_device rand;
+    std::mt19937 generator(rand());
+    std::uniform_real_distribution<float> dist(-m_globals.worldSize.x, m_globals.worldSize.x);
+
+    for (int i = 0; i < instanceCount; i++)
+        instances.push_back({{dist(generator), dist(generator)}, 10.f, 0.0f});
 
     if (!initInstance())
         return false;
@@ -590,11 +605,25 @@ void Application::onResize(uint32_t width, uint32_t height)
     if (width == 0 || height == 0)
         return;
 
-    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = width, .height = height};
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+
+    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = static_cast<uint32_t>(fbWidth), .height = static_cast<uint32_t>(fbHeight)};
     m_surface.Configure(&config);
 
-    m_globals.windowSize.y = width;
-    m_globals.windowSize.x = height;
+    m_globals.windowSize = glm::vec2(fbWidth, fbHeight);
+
+    float halfWidth = m_globals.windowSize.x * 0.5f;
+    float halfHeight = m_globals.windowSize.y * 0.5f;
+
+    m_globals.proj = glm::ortho(
+        -halfWidth,
+        halfWidth,
+        -halfHeight,
+        halfHeight,
+        -1.f, 1.f);
+
+    m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
 }
 
 bool Application::isRunning()
