@@ -44,8 +44,8 @@ private:
 
     void Render();
 
-    const uint32_t m_kWidth = 512;
-    const uint32_t m_kHeight = 512;
+    const uint32_t m_kWidth = 1280;
+    const uint32_t m_kHeight = 720;
 
     GLFWwindow *m_window;
     wgpu::Instance m_instance;
