@@ -55,7 +55,7 @@ private:
     wgpu::TextureFormat m_format;
 
     wgpu::Buffer m_vb;
-    wgpu::Buffer m_worldbuf;
+    wgpu::Buffer m_lineBuffer;
     wgpu::Buffer m_particleBuffer;
     wgpu::Buffer m_globalBuffer;
 
@@ -66,8 +66,9 @@ private:
 
     wgpu::BindGroupLayout m_renderBindGroupLayout;
     wgpu::BindGroup m_renderBindGroup;
+    wgpu::BindGroup m_lineRenderBindGroup;
     wgpu::RenderPipeline m_pipeline;
-    wgpu::RenderPipeline m_pWorld;
+    wgpu::RenderPipeline m_linePipeline;
 
     wgpu::BindGroupLayout m_globalBindGroupLayout;
     wgpu::BindGroup m_globalBindGroup;

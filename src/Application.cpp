@@ -10,6 +10,14 @@ struct Particle
     float _pad;
 };
 
+struct Line
+{
+    glm::vec3 p1;
+    float _pad1;
+    glm::vec3 p2;
+    float thickness;
+};
+
 // clang-format off
 float vertices[] = {
     // triangle 1
@@ -35,6 +43,7 @@ float wrld[] = {
 
 int instanceCount = 1000;
 std::vector<Particle> instances(instanceCount);
+std::vector<Line> lines{};
 
 void Application::Render()
 {
@@ -87,11 +96,12 @@ void Application::Render()
     pass.SetVertexBuffer(0, m_vb);
     pass.Draw(6, static_cast<uint32_t>(instances.size()));
 
-    // Draw world bounds
-    pass.SetPipeline(m_pWorld);
+    // Draw lines
+    pass.SetPipeline(m_linePipeline);
     pass.SetBindGroup(0, m_globalBindGroup);
-    pass.SetVertexBuffer(0, m_worldbuf);
-    pass.Draw(6, sizeof(wrld));
+    pass.SetBindGroup(1, m_lineRenderBindGroup);
+    pass.SetVertexBuffer(0, m_vb);
+    pass.Draw(6, static_cast<uint32_t>(lines.size()));
 
     m_Gui.update(pass);
 
@@ -282,6 +292,12 @@ bool Application::initBuffers()
     m_vb = m_device.CreateBuffer(&vbDesc);
     m_device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
 
+    if (m_vb == nullptr)
+    {
+        std::cout << "ERROR: Failed to initialize quad vertex buffer." << std::endl;
+        return false;
+    }
+
     // Particle buffer
     wgpu::BufferDescriptor pbDesc{};
     pbDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
@@ -291,13 +307,26 @@ bool Application::initBuffers()
     m_particleBuffer = m_device.CreateBuffer(&pbDesc);
     m_device.GetQueue().WriteBuffer(m_particleBuffer, 0, instances.data(), instances.size() * sizeof(Particle));
 
-    // World vertex buffer
-    wgpu::BufferDescriptor wvbDesc{};
-    wvbDesc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    wvbDesc.size = sizeof(wrld);
-    wvbDesc.label = "World";
-    m_worldbuf = m_device.CreateBuffer(&wvbDesc);
-    m_device.GetQueue().WriteBuffer(m_worldbuf, 0, wrld, sizeof(wrld));
+    if (m_particleBuffer == nullptr)
+    {
+        std::cout << "ERROR: Failed to initialize particle buffer." << std::endl;
+        return false;
+    }
+
+    // Line buffer
+    wgpu::BufferDescriptor nDesc{};
+    nDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+    nDesc.mappedAtCreation = false;
+    nDesc.size = lines.size() * sizeof(Line);
+    nDesc.label = "Line";
+    m_lineBuffer = m_device.CreateBuffer(&nDesc);
+    m_device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
+
+    if (m_lineBuffer == nullptr)
+    {
+        std::cout << "ERROR: Failed to initialize line buffer." << std::endl;
+        return false;
+    }
 
     // Global buffer
     wgpu::BufferDescriptor gDesc{};
@@ -307,20 +336,27 @@ bool Application::initBuffers()
     m_globalBuffer = m_device.CreateBuffer(&gDesc);
     m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
 
-    return m_vb != nullptr && m_particleBuffer != nullptr && m_worldbuf != nullptr;
+    if (m_globalBuffer == nullptr)
+    {
+        std::cout << "ERROR: Failed to initialize global buffer." << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 void Application::initBindGroup()
 {
     std::cout << "initBindGroup" << std::endl;
-    uint32_t bufferSize = static_cast<uint32_t>(instances.size() * sizeof(Particle));
+    uint32_t particleBufferSize = static_cast<uint32_t>(instances.size() * sizeof(Particle));
+    uint32_t lineBufferSize = static_cast<uint32_t>(lines.size() * sizeof(Line));
 
     // Compute bind group
     wgpu::BindGroupEntry computeEntry{};
     computeEntry.binding = 0;
     computeEntry.buffer = m_particleBuffer;
     computeEntry.offset = 0;
-    computeEntry.size = bufferSize;
+    computeEntry.size = particleBufferSize;
 
     wgpu::BindGroupDescriptor computeDesc{};
     computeDesc.layout = m_computeBindGroupLayout;
@@ -336,7 +372,7 @@ void Application::initBindGroup()
     renderEntry.binding = 0;
     renderEntry.buffer = m_particleBuffer;
     renderEntry.offset = 0;
-    renderEntry.size = bufferSize;
+    renderEntry.size = particleBufferSize;
 
     wgpu::BindGroupDescriptor renderDesc{};
     renderDesc.layout = m_renderBindGroupLayout;
@@ -346,6 +382,22 @@ void Application::initBindGroup()
 
     if (!m_renderBindGroup)
         std::cout << "ERROR: Failed to create render bind group!" << std::endl;
+
+    // Line bind group
+    wgpu::BindGroupEntry lineEntry{};
+    lineEntry.binding = 0;
+    lineEntry.buffer = m_lineBuffer;
+    lineEntry.offset = 0;
+    lineEntry.size = lineBufferSize;
+
+    wgpu::BindGroupDescriptor lineRenderDesc{};
+    lineRenderDesc.layout = m_renderBindGroupLayout;
+    lineRenderDesc.entryCount = 1;
+    lineRenderDesc.entries = &lineEntry;
+    m_lineRenderBindGroup = m_device.CreateBindGroup(&lineRenderDesc);
+
+    if (!m_lineRenderBindGroup)
+        std::cout << "ERROR: Failed to create line render bind group!" << std::endl;
 
     // Global bind group
     wgpu::BindGroupEntry globalEntry{};
@@ -370,10 +422,11 @@ bool Application::initRenderPipeline()
 {
     std::cout << "Creating render pipeline" << std::endl;
 
-    wgpu::ShaderModule shaderModule = Util::loadShaderModule(RESOURCE_DIR "/shader.wgsl", m_device);
-    if (!shaderModule)
+    wgpu::ShaderModule particleShader = Util::loadShaderModule(RESOURCE_DIR "/particle-shader.wgsl", m_device);
+    wgpu::ShaderModule lineShader = Util::loadShaderModule(RESOURCE_DIR "/line-shader.wgsl", m_device);
+    if (!particleShader || !lineShader)
     {
-        std::cout << "ERROR: Failed to load shader.wgsl!" << std::endl;
+        std::cout << "ERROR: Failed to load render shaders!" << std::endl;
         return false;
     }
 
@@ -409,76 +462,54 @@ bool Application::initRenderPipeline()
     colorTarget.format = m_format;
     colorTarget.writeMask = wgpu::ColorWriteMask::All;
 
-    wgpu::FragmentState frag{};
-    frag.module = shaderModule;
-    frag.entryPoint = "fs_main";
-    frag.targetCount = 1;
-    frag.targets = &colorTarget;
+    // particle shader
+    {
+        wgpu::FragmentState frag{};
+        frag.module = particleShader;
+        frag.entryPoint = "fs_main";
+        frag.targetCount = 1;
+        frag.targets = &colorTarget;
 
-    wgpu::RenderPipelineDescriptor rp{};
-    rp.layout = renderPipelineLayout;
-    rp.vertex.module = shaderModule;
-    rp.vertex.entryPoint = "vs_main";
-    rp.vertex.bufferCount = 1;
-    rp.vertex.buffers = &vbl;
-    rp.fragment = &frag;
-    rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-    rp.multisample.count = 1;
+        wgpu::RenderPipelineDescriptor rp{};
+        rp.layout = renderPipelineLayout;
+        rp.vertex.module = particleShader;
+        rp.vertex.entryPoint = "vs_main";
+        rp.vertex.bufferCount = 1;
+        rp.vertex.buffers = &vbl;
+        rp.fragment = &frag;
+        rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+        rp.multisample.count = 1;
 
-    m_pipeline = m_device.CreateRenderPipeline(&rp);
+        m_pipeline = m_device.CreateRenderPipeline(&rp);
+    }
 
-    if (!m_pipeline)
+    // line shader
+    {
+        wgpu::FragmentState frag{};
+        frag.module = lineShader;
+        frag.entryPoint = "fs_main";
+        frag.targetCount = 1;
+        frag.targets = &colorTarget;
+
+        wgpu::RenderPipelineDescriptor rp{};
+        rp.layout = renderPipelineLayout;
+        rp.vertex.module = lineShader;
+        rp.vertex.entryPoint = "vs_main";
+        rp.vertex.bufferCount = 1;
+        rp.vertex.buffers = &vbl;
+        rp.fragment = &frag;
+        rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
+        rp.multisample.count = 1;
+
+        m_linePipeline = m_device.CreateRenderPipeline(&rp);
+    }
+
+    if (!m_linePipeline)
     {
         std::cout << "ERROR: Failed to create render pipeline!" << std::endl;
         return false;
     }
     std::cout << "Render pipeline created" << std::endl;
-
-    wgpu::ShaderModule worldShader = Util::loadShaderModule(RESOURCE_DIR "/world.wgsl", m_device);
-
-    wgpu::VertexAttribute worldAttr{};
-    worldAttr.shaderLocation = 0;
-    worldAttr.format = wgpu::VertexFormat::Float32x2;
-    worldAttr.offset = 0;
-
-    wgpu::VertexBufferLayout wrldVBL{};
-    wrldVBL.arrayStride = sizeof(float) * 2;
-    wrldVBL.stepMode = wgpu::VertexStepMode::Vertex;
-    wrldVBL.attributeCount = 1;
-    wrldVBL.attributes = &worldAttr;
-
-    wgpu::ColorTargetState wrldColorTarget{};
-    wrldColorTarget.format = m_format;
-    wrldColorTarget.writeMask = wgpu::ColorWriteMask::All;
-
-    wgpu::FragmentState frag2{};
-    frag2.module = worldShader;
-    frag2.entryPoint = "fs_main";
-    frag2.targetCount = 1;
-    frag2.targets = &wrldColorTarget;
-
-    wgpu::PipelineLayoutDescriptor wplDesc{};
-    wplDesc.bindGroupLayoutCount = 1;
-    wplDesc.bindGroupLayouts = &m_globalBindGroupLayout;
-    wgpu::PipelineLayout wrenderPipelineLayout = m_device.CreatePipelineLayout(&wplDesc);
-
-    wgpu::RenderPipelineDescriptor rp2{};
-    rp2.vertex.module = worldShader;
-    rp2.layout = wrenderPipelineLayout;
-    rp2.vertex.entryPoint = "vs_main";
-    rp2.vertex.bufferCount = 1;
-    rp2.vertex.buffers = &wrldVBL;
-    rp2.fragment = &frag2;
-    rp2.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-    rp2.multisample.count = 1;
-
-    m_pWorld = m_device.CreateRenderPipeline(&rp2);
-    if (!m_pWorld)
-    {
-        std::cout << "ERROR: Failed to create world pipeline!" << std::endl;
-        return false;
-    }
-    std::cout << "World render pipeline created" << std::endl;
 
     return true;
 }
@@ -556,6 +587,13 @@ bool Application::onInit()
         -halfHeight,
         halfHeight,
         -1.f, 1.f);
+
+    // top & bottom world bounds
+    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, -m_globals.worldSize.y, 0), .thickness = 1.f});
+    // left & right world bounds
+    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(-m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
 
     std::random_device rand;
     std::mt19937 generator(rand());
