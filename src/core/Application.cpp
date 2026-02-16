@@ -422,8 +422,8 @@ bool Application::initRenderPipeline()
 {
     std::cout << "Creating render pipeline" << std::endl;
 
-    wgpu::ShaderModule particleShader = Util::loadShaderModule(RESOURCE_DIR "/particle-shader.wgsl", m_device);
-    wgpu::ShaderModule lineShader = Util::loadShaderModule(RESOURCE_DIR "/line-shader.wgsl", m_device);
+    wgpu::ShaderModule particleShader = Util::loadShaderModule(SHADER_DIR "/particle.wgsl", m_device);
+    wgpu::ShaderModule lineShader = Util::loadShaderModule(SHADER_DIR "/line.wgsl", m_device);
     if (!particleShader || !lineShader)
     {
         std::cout << "ERROR: Failed to load render shaders!" << std::endl;
@@ -518,7 +518,7 @@ bool Application::initCompute()
 {
     std::cout << "initCompute" << std::endl;
 
-    wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(RESOURCE_DIR "/compute.wgsl", m_device);
+    wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_device);
 
     if (!computeShaderModule)
     {

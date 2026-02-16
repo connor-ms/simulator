@@ -7,13 +7,13 @@ include(FetchContent)
 
 add_executable(app
     src/main.cpp
-    src/Application.cpp
-    src/Util.cpp
-    src/GUI.cpp
+    src/core/Application.cpp
+    src/core/Util.cpp
+    src/gui/GUI.cpp
 )
 
 target_compile_definitions(app PRIVATE
-    RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
+    SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/shaders"
 )
 
 set(DAWN_FETCH_DEPENDENCIES ON)
@@ -36,7 +36,7 @@ if(EMSCRIPTEN)
         "-sASYNCIFY=1"
         "-sUSE_GLFW=3"
         "-sALLOW_MEMORY_GROWTH"
-        --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders"
         --shell-file "${CMAKE_CURRENT_SOURCE_DIR}/test.html"
     )
 else()

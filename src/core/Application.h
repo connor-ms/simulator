@@ -11,7 +11,7 @@
 #include <iostream>
 #include <vector>
 
-#include "GUI.h"
+#include "../gui/GUI.h"
 
 struct Globals
 {
