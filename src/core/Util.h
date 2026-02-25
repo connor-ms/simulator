@@ -6,5 +6,5 @@
 class Util
 {
 public:
-    static wgpu::ShaderModule loadShaderModule(const std::filesystem::path &path, wgpu::Device device);
+    static wgpu::ShaderModule loadShaderModule(const std::filesystem::path &path, wgpu::Device device, bool includeGlobals = true);
 };

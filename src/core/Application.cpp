@@ -47,16 +47,12 @@ std::vector<Line> lines{};
 
 void Application::Render()
 {
-    wgpu::SurfaceTexture surfaceTexture;
-    m_surface.GetCurrentTexture(&surfaceTexture);
-
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
 
     // Begin compute pass
     wgpu::ComputePassDescriptor computePassDesc{};
-    computePassDesc.timestampWrites = nullptr;
 
-    wgpu::ComputePassEncoder computePass = encoder.BeginComputePass(&computePassDesc);
+    wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
     computePass.SetPipeline(m_computePipeline);
     computePass.SetBindGroup(0, m_globalBindGroup);
     computePass.SetBindGroup(1, m_computeBindGroup);
@@ -69,6 +65,9 @@ void Application::Render()
     // End compute pass
 
     // Begin render pass
+    wgpu::SurfaceTexture surfaceTexture;
+    m_surface.GetCurrentTexture(&surfaceTexture);
+
     wgpu::RenderPassColorAttachment attachment{};
     attachment.view = surfaceTexture.texture.CreateView();
     attachment.loadOp = wgpu::LoadOp::Clear;
@@ -79,15 +78,6 @@ void Application::Render()
     renderpass.colorAttachments = &attachment;
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
-
-    // int width, height;
-    // glfwGetFramebufferSize(m_window, &width, &height);
-
-    // pass.SetViewport(
-    //     0.0f, 0.0f,
-    //     (float)width,
-    //     (float)height,
-    //     0.0f, 1.0f);
 
     // Draw particles
     pass.SetPipeline(m_pipeline);
@@ -110,7 +100,6 @@ void Application::Render()
 
     wgpu::CommandBuffer commands = encoder.Finish();
     m_device.GetQueue().Submit(1, &commands);
-    // std::cout << "Frame" << std::endl;
 }
 
 bool Application::initWindow()
