@@ -7,8 +7,7 @@ struct Particle
 {
     glm::vec2 position;
     glm::vec2 velocity;
-    glm::vec2 C0;
-    glm::vec2 C1;
+    glm::f32mat2x2 C;
     float J;
     float _pad;
 };
@@ -657,7 +656,7 @@ bool Application::onInit()
     std::uniform_real_distribution<float> dist(-m_globals.worldSize.x, m_globals.worldSize.x);
 
     for (int i = 0; i < instanceCount; i++)
-        instances.push_back({{dist(generator), dist(generator)}, glm::vec2(0), glm::vec2(0), glm::vec2(0), float(0)});
+        instances.push_back({{dist(generator), dist(generator)}, glm::vec2(0), glm::f32mat2x2(0), float(0)});
 
     if (!initInstance())
         return false;

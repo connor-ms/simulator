@@ -9,8 +9,7 @@ struct Particle
 {
     position: vec2f,
     velocity: vec2f,
-    C0: vec2f,
-    C1: vec2f,
+    C: mat2x2f,
     J: f32,
 }
 
