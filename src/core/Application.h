@@ -64,6 +64,9 @@ private:
     wgpu::PipelineLayout m_computePipelineLayout;
     wgpu::ComputePipeline m_computePipeline;
 
+    wgpu::PipelineLayout m_computePipelineLayout2;
+    wgpu::ComputePipeline m_computePipeline2;
+
     wgpu::BindGroupLayout m_renderBindGroupLayout;
     wgpu::BindGroup m_renderBindGroup;
     wgpu::BindGroup m_lineRenderBindGroup;

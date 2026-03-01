@@ -55,16 +55,31 @@ void Application::Render()
     // Begin compute pass
     wgpu::ComputePassDescriptor computePassDesc{};
 
-    wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-    computePass.SetPipeline(m_computePipeline);
-    computePass.SetBindGroup(0, m_globalBindGroup);
-    computePass.SetBindGroup(1, m_computeBindGroup);
+    {
+        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+        computePass.SetPipeline(m_computePipeline);
+        computePass.SetBindGroup(0, m_globalBindGroup);
+        computePass.SetBindGroup(1, m_computeBindGroup);
 
-    uint32_t workgroupSize = 48;
-    uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
-    computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+        uint32_t workgroupSize = 48;
+        uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
+        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-    computePass.End();
+        computePass.End();
+    }
+    {
+        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+        computePass.SetPipeline(m_computePipeline2);
+        computePass.SetBindGroup(0, m_globalBindGroup);
+        computePass.SetBindGroup(1, m_computeBindGroup);
+
+        uint32_t workgroupSize = 48;
+        uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
+        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+
+        computePass.End();
+    }
+
     // End compute pass
 
     // Begin render pass
@@ -511,47 +526,96 @@ bool Application::initCompute()
 {
     std::cout << "initCompute" << std::endl;
 
-    wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_device);
-
-    if (!computeShaderModule)
+    // compute 1
     {
-        std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
-        return false;
+        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_device);
+
+        if (!computeShaderModule)
+        {
+            std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
+            return false;
+        }
+
+        if (!m_computeBindGroupLayout)
+        {
+            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
+            return false;
+        }
+
+        wgpu::BindGroupLayout layouts[] = {
+            m_globalBindGroupLayout,
+            m_computeBindGroupLayout,
+        };
+
+        wgpu::PipelineLayoutDescriptor plDesc{};
+        plDesc.bindGroupLayoutCount = 2;
+        plDesc.bindGroupLayouts = layouts;
+        m_computePipelineLayout = m_device.CreatePipelineLayout(&plDesc);
+
+        if (!m_computePipelineLayout)
+        {
+            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
+            return false;
+        }
+
+        wgpu::ComputePipelineDescriptor cpDesc{};
+        cpDesc.layout = m_computePipelineLayout;
+        cpDesc.compute.module = computeShaderModule;
+        cpDesc.compute.entryPoint = "computeSomething";
+        cpDesc.label = "Compute";
+
+        m_computePipeline = m_device.CreateComputePipeline(&cpDesc);
+        if (!m_computePipeline)
+        {
+            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
+            return false;
+        }
     }
 
-    if (!m_computeBindGroupLayout)
+    // compute 2
     {
-        std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
-        return false;
-    }
+        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute2.wgsl", m_device);
 
-    wgpu::BindGroupLayout layouts[] = {
-        m_globalBindGroupLayout,
-        m_computeBindGroupLayout,
-    };
+        if (!computeShaderModule)
+        {
+            std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
+            return false;
+        }
 
-    wgpu::PipelineLayoutDescriptor plDesc{};
-    plDesc.bindGroupLayoutCount = 2;
-    plDesc.bindGroupLayouts = layouts;
-    m_computePipelineLayout = m_device.CreatePipelineLayout(&plDesc);
+        if (!m_computeBindGroupLayout)
+        {
+            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
+            return false;
+        }
 
-    if (!m_computePipelineLayout)
-    {
-        std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
-        return false;
-    }
+        wgpu::BindGroupLayout layouts[] = {
+            m_globalBindGroupLayout,
+            m_computeBindGroupLayout,
+        };
 
-    wgpu::ComputePipelineDescriptor cpDesc{};
-    cpDesc.layout = m_computePipelineLayout;
-    cpDesc.compute.module = computeShaderModule;
-    cpDesc.compute.entryPoint = "computeSomething";
-    cpDesc.label = "Compute";
+        wgpu::PipelineLayoutDescriptor plDesc{};
+        plDesc.bindGroupLayoutCount = 2;
+        plDesc.bindGroupLayouts = layouts;
+        m_computePipelineLayout2 = m_device.CreatePipelineLayout(&plDesc);
 
-    m_computePipeline = m_device.CreateComputePipeline(&cpDesc);
-    if (!m_computePipeline)
-    {
-        std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
-        return false;
+        if (!m_computePipelineLayout2)
+        {
+            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
+            return false;
+        }
+
+        wgpu::ComputePipelineDescriptor cpDesc{};
+        cpDesc.layout = m_computePipelineLayout2;
+        cpDesc.compute.module = computeShaderModule;
+        cpDesc.compute.entryPoint = "computeSomething";
+        cpDesc.label = "Compute";
+
+        m_computePipeline2 = m_device.CreateComputePipeline(&cpDesc);
+        if (!m_computePipeline2)
+        {
+            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
+            return false;
+        }
     }
 
     std::cout << "initCompute Done" << std::endl;
