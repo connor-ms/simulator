@@ -1,9 +1,3 @@
-struct Particle {
-    center: vec2<f32>,
-    radius: f32,
-    _pad: f32,
-}
-
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(1) @binding(0) var<storage, read_write> particles: array<Particle>;
 
@@ -11,9 +5,9 @@ struct Particle {
 fn computeSomething(@builtin(global_invocation_id) id: vec3<u32>) {
     let i = id.x;
 
-    if (particles[i].center.y > -globals.worldSize.y) {
-        particles[i].center.y += -1;
+    if (particles[i].position.y > -globals.worldSize.y) {
+        particles[i].position.y += -1;
     } else {
-        particles[i].center.y = globals.worldSize.y;
+        particles[i].position.y = globals.worldSize.y;
     }
 }

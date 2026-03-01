@@ -5,8 +5,11 @@
 
 struct Particle
 {
-    float center[2];
-    float radius;
+    glm::vec2 position;
+    glm::vec2 velocity;
+    glm::vec2 C0;
+    glm::vec2 C1;
+    float J;
     float _pad;
 };
 
@@ -337,6 +340,7 @@ bool Application::initBuffers()
 void Application::initBindGroup()
 {
     std::cout << "initBindGroup" << std::endl;
+
     uint32_t particleBufferSize = static_cast<uint32_t>(instances.size() * sizeof(Particle));
     uint32_t lineBufferSize = static_cast<uint32_t>(lines.size() * sizeof(Line));
 
@@ -589,7 +593,7 @@ bool Application::onInit()
     std::uniform_real_distribution<float> dist(-m_globals.worldSize.x, m_globals.worldSize.x);
 
     for (int i = 0; i < instanceCount; i++)
-        instances.push_back({{dist(generator), dist(generator)}, 10.f, 0.0f});
+        instances.push_back({{dist(generator), dist(generator)}, glm::vec2(0), glm::vec2(0), glm::vec2(0), float(0)});
 
     if (!initInstance())
         return false;
