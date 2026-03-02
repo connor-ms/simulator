@@ -4,7 +4,7 @@ int main()
 {
     static auto app = std::make_unique<Application>();
 
-    if (!app->onInit())
+    if (!app->init())
         return 1;
 
 #if defined(__EMSCRIPTEN__)

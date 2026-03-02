@@ -8,16 +8,33 @@ const int GRID_RES = 32;
 
 const int INST_SIZE = 40000;
 
-void Application::Render()
+bool Application::init()
 {
-    wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
+    if (!initWindow())
+        return false;
 
-    m_sim.onFrame(encoder);
-    m_renderer.onFrame(encoder);
-    m_Gui.update(encoder);
+    if (!initInstance())
+        return false;
 
-    wgpu::CommandBuffer commands = encoder.Finish();
-    m_device.GetQueue().Submit(1, &commands);
+    if (!initSurface())
+        return false;
+
+    initGlobals();
+
+    initBindGroupLayout();
+
+    if (!initBuffers())
+        return false;
+
+    initBindGroup();
+
+    m_sim.init(&m_ctx);
+    m_renderer.init(m_ctx.device, m_ctx.format, m_ctx.surface, m_sim.getState()->particleBuffer, m_ctx.globals, m_ctx.globalsBindGroupLayout, m_ctx.globalsBindGroup);
+
+    if (!m_Gui.init(m_ctx.device, m_ctx.format, m_window, m_ctx.surface))
+        return false;
+
+    return true;
 }
 
 bool Application::initWindow()
@@ -70,16 +87,16 @@ bool Application::initInstance()
 {
     static const auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
     wgpu::InstanceDescriptor instanceDesc{.requiredFeatureCount = 1, .requiredFeatures = &kTimedWaitAny};
-    m_instance = wgpu::CreateInstance(&instanceDesc);
+    m_ctx.instance = wgpu::CreateInstance(&instanceDesc);
 
-    if (!m_instance)
+    if (!m_ctx.instance)
     {
         std::cout << "Failed to initialize WebGPU!" << std::endl;
         return false;
     }
 
     std::cout << "Requesting adapter..." << std::endl;
-    wgpu::Future f1 = m_instance.RequestAdapter(
+    wgpu::Future f1 = m_ctx.instance.RequestAdapter(
         nullptr, wgpu::CallbackMode::WaitAnyOnly,
         [this](wgpu::RequestAdapterStatus status, wgpu::Adapter adapter, wgpu::StringView message)
         {
@@ -88,9 +105,9 @@ bool Application::initInstance()
                 std::cout << "Failed: " << message.data << std::endl;
                 exit(0);
             }
-            m_adapter = std::move(adapter);
+            m_ctx.adapter = std::move(adapter);
         });
-    m_instance.WaitAny(f1, UINT64_MAX);
+    m_ctx.instance.WaitAny(f1, UINT64_MAX);
     std::cout << "Got adapter!" << std::endl;
 
     std::cout << "Requesting device..." << std::endl;
@@ -101,7 +118,7 @@ bool Application::initInstance()
             std::cout << "Device error: " << message.data << std::endl;
         });
 
-    wgpu::Future f2 = m_adapter.RequestDevice(
+    wgpu::Future f2 = m_ctx.adapter.RequestDevice(
         &desc, wgpu::CallbackMode::WaitAnyOnly,
         [this](wgpu::RequestDeviceStatus status, wgpu::Device device, wgpu::StringView message)
         {
@@ -110,9 +127,9 @@ bool Application::initInstance()
                 std::cout << "Failed: " << message.data << "\n";
                 exit(0);
             }
-            m_device = std::move(device);
+            m_ctx.device = std::move(device);
         });
-    m_instance.WaitAny(f2, UINT64_MAX);
+    m_ctx.instance.WaitAny(f2, UINT64_MAX);
     std::cout << "Got device!" << std::endl;
 
     return true;
@@ -121,20 +138,41 @@ bool Application::initInstance()
 bool Application::initSurface()
 {
     std::cout << "Creating surface..." << std::endl;
-    m_surface = wgpu::glfw::CreateSurfaceForWindow(m_instance, m_window);
+    m_ctx.surface = wgpu::glfw::CreateSurfaceForWindow(m_ctx.instance, m_window);
 
     wgpu::SurfaceCapabilities capabilities;
-    m_surface.GetCapabilities(m_adapter, &capabilities);
-    m_format = capabilities.formats[0];
+    m_ctx.surface.GetCapabilities(m_ctx.adapter, &capabilities);
+    m_ctx.format = capabilities.formats[0];
 
     int width, height;
     glfwGetFramebufferSize(m_window, &width, &height);
 
-    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
-    m_surface.Configure(&config);
+    wgpu::SurfaceConfiguration config{.device = m_ctx.device, .format = m_ctx.format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
+    m_ctx.surface.Configure(&config);
     std::cout << "Surface created!" << std::endl;
 
     return true;
+}
+
+void Application::initGlobals()
+{
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+
+    m_ctx.globals = Globals{
+        .windowSize = glm::vec2(fbWidth, fbHeight),
+        .worldSize = glm::vec4(256, 256, 256, 0),
+    };
+
+    float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
+    float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
+
+    m_ctx.globals.proj = glm::ortho(
+        -halfWidth,
+        halfWidth,
+        -halfHeight,
+        halfHeight,
+        -1.f, 1.f);
 }
 
 void Application::initBindGroupLayout()
@@ -150,9 +188,9 @@ void Application::initBindGroupLayout()
     wgpu::BindGroupLayoutDescriptor globalDesc{};
     globalDesc.entryCount = 1;
     globalDesc.entries = &globalEntry;
-    m_globalBindGroupLayout = m_device.CreateBindGroupLayout(&globalDesc);
+    m_ctx.globalsBindGroupLayout = m_ctx.device.CreateBindGroupLayout(&globalDesc);
 
-    if (!m_globalBindGroupLayout)
+    if (!m_ctx.globalsBindGroupLayout)
         std::cout << "ERROR: Failed to create global bind group layout!" << std::endl;
 
     std::cout << "initBindGroupLayout Done" << std::endl;
@@ -167,28 +205,28 @@ bool Application::initBuffers()
     gDesc.size = sizeof(Globals);
     gDesc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
     gDesc.label = "Global";
-    m_globalBuffer = m_device.CreateBuffer(&gDesc);
-    m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
+    m_ctx.globalsBuffer = m_ctx.device.CreateBuffer(&gDesc);
+    m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 
-    if (m_globalBuffer == nullptr)
+    if (m_ctx.globalsBuffer == nullptr)
     {
         std::cout << "ERROR: Failed to initialize global buffer." << std::endl;
         return false;
     }
 
     // Grid buffer
-    wgpu::BufferDescriptor gridDesc{};
-    gridDesc.size = GRID_RES * GRID_OBJ_SIZE;
-    gridDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-    gridDesc.label = "Grid";
-    m_gridBuffer = m_device.CreateBuffer(&gridDesc);
-    // m_device.GetQueue().WriteBuffer(m_gridBuffer, 0, &m_globals, sizeof(Globals));
+    // wgpu::BufferDescriptor gridDesc{};
+    // gridDesc.size = GRID_RES * GRID_OBJ_SIZE;
+    // gridDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+    // gridDesc.label = "Grid";
+    // m_gridBuffer = m_device.CreateBuffer(&gridDesc);
+    // // m_device.GetQueue().WriteBuffer(m_gridBuffer, 0, &m_globals, sizeof(Globals));
 
-    if (m_gridBuffer == nullptr)
-    {
-        std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
-        return false;
-    }
+    // if (m_gridBuffer == nullptr)
+    // {
+    //     std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
+    //     return false;
+    // }
 
     return true;
 }
@@ -200,78 +238,38 @@ void Application::initBindGroup()
     // Global bind group
     wgpu::BindGroupEntry globalEntry{};
     globalEntry.binding = 0;
-    globalEntry.buffer = m_globalBuffer;
+    globalEntry.buffer = m_ctx.globalsBuffer;
     globalEntry.offset = 0;
     globalEntry.size = sizeof(Globals);
 
     wgpu::BindGroupDescriptor globalDesc{};
-    globalDesc.layout = m_globalBindGroupLayout;
+    globalDesc.layout = m_ctx.globalsBindGroupLayout;
     globalDesc.entryCount = 1;
     globalDesc.entries = &globalEntry;
-    m_globalBindGroup = m_device.CreateBindGroup(&globalDesc);
+    m_ctx.globalsBindGroup = m_ctx.device.CreateBindGroup(&globalDesc);
 
-    if (!m_globalBindGroup)
+    if (!m_ctx.globalsBindGroup)
         std::cout << "ERROR: Failed to create global bind group!" << std::endl;
 
     std::cout << "initBindGroup Done" << std::endl;
 }
 
-bool Application::onInit()
-{
-    if (!initWindow())
-        return false;
-
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
-
-    m_globals = Globals{
-        .windowSize = glm::vec2(fbWidth, fbHeight),
-        .worldSize = glm::vec4(256, 256, 256, 0),
-    };
-
-    float halfWidth = m_globals.windowSize.x * 0.5f;
-    float halfHeight = m_globals.windowSize.y * 0.5f;
-
-    m_globals.proj = glm::ortho(
-        -halfWidth,
-        halfWidth,
-        -halfHeight,
-        halfHeight,
-        -1.f, 1.f);
-
-    if (!initInstance())
-        return false;
-
-    if (!initSurface())
-        return false;
-
-    initBindGroupLayout();
-
-    if (!initBuffers())
-        return false;
-
-    initBindGroup();
-    m_sim = Simulator();
-    m_sim.init(m_device, m_globalBindGroupLayout, m_globalBindGroup);
-    m_renderer = Renderer();
-    m_renderer.init(m_device, m_format, m_surface, m_sim.m_particleBuffer, m_globals, m_globalBindGroupLayout, m_globalBindGroup);
-
-    m_Gui = GUI();
-    if (!m_Gui.init(m_device, m_format, m_window, m_surface))
-        return false;
-
-    // exit(1);
-
-    return true;
-}
-
 void Application::onFrame()
 {
     glfwPollEvents();
-    Render();
+
+    wgpu::CommandEncoder encoder = m_ctx.device.CreateCommandEncoder();
+
+    m_sim.onFrame(encoder);
+    m_renderer.onFrame(encoder);
+    m_Gui.update(encoder);
+
+    wgpu::CommandBuffer commands = encoder.Finish();
+    m_ctx.device.GetQueue().Submit(1, &commands);
+
 #ifndef __EMSCRIPTEN__
-    m_surface.Present();
-    m_device.Tick();
+    m_ctx.surface.Present();
+    m_ctx.device.Tick();
 #endif
 }
 
@@ -283,22 +281,22 @@ void Application::onResize(uint32_t width, uint32_t height)
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
 
-    wgpu::SurfaceConfiguration config{.device = m_device, .format = m_format, .width = static_cast<uint32_t>(fbWidth), .height = static_cast<uint32_t>(fbHeight)};
-    m_surface.Configure(&config);
+    wgpu::SurfaceConfiguration config{.device = m_ctx.device, .format = m_ctx.format, .width = static_cast<uint32_t>(fbWidth), .height = static_cast<uint32_t>(fbHeight)};
+    m_ctx.surface.Configure(&config);
 
-    m_globals.windowSize = glm::vec2(fbWidth, fbHeight);
+    m_ctx.globals.windowSize = glm::vec2(fbWidth, fbHeight);
 
-    float halfWidth = m_globals.windowSize.x * 0.5f;
-    float halfHeight = m_globals.windowSize.y * 0.5f;
+    float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
+    float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
 
-    m_globals.proj = glm::ortho(
+    m_ctx.globals.proj = glm::ortho(
         -halfWidth,
         halfWidth,
         -halfHeight,
         halfHeight,
         -1.f, 1.f);
 
-    m_device.GetQueue().WriteBuffer(m_globalBuffer, 0, &m_globals, sizeof(Globals));
+    m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 }
 
 bool Application::isRunning()

@@ -2,12 +2,10 @@
 #include <iostream>
 #include "Util.h"
 
-void Simulator::init(wgpu::Device device, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals)
+void Simulator::init(GPUContext *ctx)
 {
-    m_device = device;
-    m_globalBindGroupLayout = globalsLayout;
-    m_globalBindGroup = globals;
-    m_particles = createParticleArray(1000);
+    m_ctx = ctx;
+    m_state.particles = createParticleArray(1000);
 
     initBindGroupLayouts();
     initBuffers();
@@ -25,7 +23,7 @@ void Simulator::initBindGroupLayouts()
     wgpu::BindGroupLayoutDescriptor computeDesc{};
     computeDesc.entryCount = 1;
     computeDesc.entries = &computeEntry;
-    m_bindGroupLayout = m_device.CreateBindGroupLayout(&computeDesc);
+    m_bindGroupLayout = m_ctx->device.CreateBindGroupLayout(&computeDesc);
 
     if (!m_bindGroupLayout)
         std::cout << "ERROR: Failed to create compute bind group layout!" << std::endl;
@@ -37,12 +35,12 @@ void Simulator::initBuffers()
     wgpu::BufferDescriptor desc{};
     desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
     desc.mappedAtCreation = false;
-    desc.size = m_particles.size() * sizeof(Particle);
+    desc.size = m_state.particles.size() * sizeof(Particle);
     desc.label = "Particle";
-    m_particleBuffer = m_device.CreateBuffer(&desc);
-    m_device.GetQueue().WriteBuffer(m_particleBuffer, 0, m_particles.data(), m_particles.size() * sizeof(Particle));
+    m_state.particleBuffer = m_ctx->device.CreateBuffer(&desc);
+    m_ctx->device.GetQueue().WriteBuffer(m_state.particleBuffer, 0, m_state.particles.data(), m_state.particles.size() * sizeof(Particle));
 
-    if (m_particleBuffer == nullptr)
+    if (m_state.particleBuffer == nullptr)
     {
         std::cout << "ERROR: Failed to initialize particle buffer." << std::endl;
     }
@@ -50,14 +48,14 @@ void Simulator::initBuffers()
 
 void Simulator::initBindGroups()
 {
-    uint32_t particleBufferSize = static_cast<uint32_t>(m_particles.size() * sizeof(Particle));
+    uint32_t particleBufferSize = static_cast<uint32_t>(m_state.particles.size() * sizeof(Particle));
 
     std::cout << particleBufferSize << std::endl;
 
     // Compute bind group
     wgpu::BindGroupEntry computeEntry{};
     computeEntry.binding = 0;
-    computeEntry.buffer = m_particleBuffer;
+    computeEntry.buffer = m_state.particleBuffer;
     computeEntry.offset = 0;
     computeEntry.size = particleBufferSize;
 
@@ -65,7 +63,7 @@ void Simulator::initBindGroups()
     computeDesc.layout = m_bindGroupLayout;
     computeDesc.entryCount = 1;
     computeDesc.entries = &computeEntry;
-    m_bindGroup = m_device.CreateBindGroup(&computeDesc);
+    m_bindGroup = m_ctx->device.CreateBindGroup(&computeDesc);
 
     if (!m_bindGroup)
         std::cout << "ERROR: Failed to create compute bind group!" << std::endl;
@@ -77,7 +75,7 @@ void Simulator::initPipeline()
 
     // compute 1
     {
-        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_device);
+        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_ctx->device);
 
         if (!computeShaderModule)
         {
@@ -92,14 +90,14 @@ void Simulator::initPipeline()
         }
 
         wgpu::BindGroupLayout layouts[] = {
-            m_globalBindGroupLayout,
+            m_ctx->globalsBindGroupLayout,
             m_bindGroupLayout,
         };
 
         wgpu::PipelineLayoutDescriptor plDesc{};
         plDesc.bindGroupLayoutCount = 2;
         plDesc.bindGroupLayouts = layouts;
-        m_computePipelineLayout = m_device.CreatePipelineLayout(&plDesc);
+        m_computePipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
 
         if (!m_computePipelineLayout)
         {
@@ -113,7 +111,7 @@ void Simulator::initPipeline()
         cpDesc.compute.entryPoint = "computeSomething";
         cpDesc.label = "Compute";
 
-        m_computePipeline = m_device.CreateComputePipeline(&cpDesc);
+        m_computePipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
         if (!m_computePipeline)
         {
             std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
@@ -122,7 +120,7 @@ void Simulator::initPipeline()
 
     // compute 2
     {
-        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute2.wgsl", m_device);
+        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute2.wgsl", m_ctx->device);
 
         if (!computeShaderModule)
         {
@@ -137,14 +135,14 @@ void Simulator::initPipeline()
         }
 
         wgpu::BindGroupLayout layouts[] = {
-            m_globalBindGroupLayout,
+            m_ctx->globalsBindGroupLayout,
             m_bindGroupLayout,
         };
 
         wgpu::PipelineLayoutDescriptor plDesc{};
         plDesc.bindGroupLayoutCount = 2;
         plDesc.bindGroupLayouts = layouts;
-        m_computePipelineLayout2 = m_device.CreatePipelineLayout(&plDesc);
+        m_computePipelineLayout2 = m_ctx->device.CreatePipelineLayout(&plDesc);
 
         if (!m_computePipelineLayout2)
         {
@@ -158,7 +156,7 @@ void Simulator::initPipeline()
         cpDesc.compute.entryPoint = "computeSomething";
         cpDesc.label = "Compute";
 
-        m_computePipeline2 = m_device.CreateComputePipeline(&cpDesc);
+        m_computePipeline2 = m_ctx->device.CreateComputePipeline(&cpDesc);
         if (!m_computePipeline2)
         {
             std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
@@ -174,11 +172,11 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
     {
         wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
         computePass.SetPipeline(m_computePipeline);
-        computePass.SetBindGroup(0, m_globalBindGroup);
+        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 
         uint32_t workgroupSize = 48;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_particles.size()) + workgroupSize - 1) / workgroupSize;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_state.particles.size()) + workgroupSize - 1) / workgroupSize;
         computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
         computePass.End();
@@ -186,11 +184,11 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
     {
         wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
         computePass.SetPipeline(m_computePipeline2);
-        computePass.SetBindGroup(0, m_globalBindGroup);
+        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 
         uint32_t workgroupSize = 48;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_particles.size()) + workgroupSize - 1) / workgroupSize;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_state.particles.size()) + workgroupSize - 1) / workgroupSize;
         computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
         computePass.End();
