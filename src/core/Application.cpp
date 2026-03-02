@@ -6,8 +6,6 @@
 const int GRID_OBJ_SIZE = 16;
 const int GRID_RES = 32;
 
-const int INST_SIZE = 40000;
-
 bool Application::init()
 {
     if (!initWindow())
@@ -30,9 +28,7 @@ bool Application::init()
 
     m_sim.init(&m_ctx);
     m_renderer.init(&m_ctx, m_sim.getState());
-
-    if (!m_Gui.init(m_ctx.device, m_ctx.format, m_window, m_ctx.surface))
-        return false;
+    m_gui.init(&m_ctx, m_window);
 
     return true;
 }
@@ -262,7 +258,7 @@ void Application::onFrame()
 
     m_sim.onFrame(encoder);
     m_renderer.onFrame(encoder);
-    m_Gui.update(encoder);
+    m_gui.update(encoder);
 
     wgpu::CommandBuffer commands = encoder.Finish();
     m_ctx.device.GetQueue().Submit(1, &commands);

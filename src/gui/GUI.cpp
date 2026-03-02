@@ -88,8 +88,10 @@ void applyTheme()
     // clang-format on
 }
 
-bool GUI::init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *window, wgpu::Surface surface)
+bool GUI::init(GPUContext *ctx, GLFWwindow *window)
 {
+    m_ctx = ctx;
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO();
@@ -97,10 +99,8 @@ bool GUI::init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *wind
     applyTheme();
 
     ImGui_ImplWGPU_InitInfo info = {};
-    info.Device = device.Get();
-    info.RenderTargetFormat = static_cast<WGPUTextureFormat>(format);
-
-    m_surface = surface;
+    info.Device = m_ctx->device.Get();
+    info.RenderTargetFormat = static_cast<WGPUTextureFormat>(m_ctx->format);
 
     ImGui_ImplGlfw_InitForOther(window, true);
     ImGui_ImplWGPU_Init(&info);
@@ -110,7 +110,7 @@ bool GUI::init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *wind
 void GUI::update(wgpu::CommandEncoder encoder)
 {
     wgpu::SurfaceTexture surfaceTexture;
-    m_surface.GetCurrentTexture(&surfaceTexture);
+    m_ctx->surface.GetCurrentTexture(&surfaceTexture);
 
     wgpu::RenderPassColorAttachment attachment{};
     attachment.view = surfaceTexture.texture.CreateView();

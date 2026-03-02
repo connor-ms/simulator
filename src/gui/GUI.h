@@ -8,12 +8,14 @@
 #include <webgpu/webgpu_glfw.h>
 #include <GLFW/glfw3.h>
 
+#include "../core/GPUContext.h"
+
 class GUI
 {
 public:
-    bool init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *window, wgpu::Surface surface);
+    bool init(GPUContext *ctx, GLFWwindow *window);
     void update(wgpu::CommandEncoder encoder);
 
 private:
-    wgpu::Surface m_surface;
+    GPUContext *m_ctx;
 };

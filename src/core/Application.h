@@ -36,14 +36,12 @@ private:
     bool initBuffers();
     void initBindGroup();
 
+    GLFWwindow *m_window;
     GPUContext m_ctx;
     Simulator m_sim;
     Renderer m_renderer;
+    GUI m_gui;
 
     const uint32_t m_kWidth = 1280;
     const uint32_t m_kHeight = 720;
-
-    GLFWwindow *m_window;
-
-    GUI m_Gui;
 };
