@@ -12,6 +12,23 @@
 #include <vector>
 
 #include "../gui/GUI.h"
+#include "Simulator.h"
+#include "Render.h"
+
+// struct GPUContext
+// {
+//     wgpu::Instance instance;
+//     wgpu::Adapter adapter;
+//     wgpu::Device device;
+//     wgpu::Surface surface;
+//     wgpu::TextureFormat format;
+
+//     wgpu::Buffer globalBuffer;
+//     // wgpu::Buffer m_gridBuffer;
+
+//     wgpu::BindGroupLayout globalsBindGroupLayout;
+//     wgpu::BindGroup globalsBindGroup;
+// };
 
 struct Globals
 {
@@ -39,10 +56,11 @@ private:
     void initBindGroupLayout();
     bool initBuffers();
     void initBindGroup();
-    bool initRenderPipeline();
-    bool initCompute();
 
     void Render();
+
+    Simulator m_sim;
+    Renderer m_renderer;
 
     const uint32_t m_kWidth = 1280;
     const uint32_t m_kHeight = 720;
@@ -54,24 +72,8 @@ private:
     wgpu::Surface m_surface;
     wgpu::TextureFormat m_format;
 
-    wgpu::Buffer m_vb;
-    wgpu::Buffer m_lineBuffer;
-    wgpu::Buffer m_particleBuffer;
     wgpu::Buffer m_globalBuffer;
-
-    wgpu::BindGroupLayout m_computeBindGroupLayout;
-    wgpu::BindGroup m_computeBindGroup;
-    wgpu::PipelineLayout m_computePipelineLayout;
-    wgpu::ComputePipeline m_computePipeline;
-
-    wgpu::PipelineLayout m_computePipelineLayout2;
-    wgpu::ComputePipeline m_computePipeline2;
-
-    wgpu::BindGroupLayout m_renderBindGroupLayout;
-    wgpu::BindGroup m_renderBindGroup;
-    wgpu::BindGroup m_lineRenderBindGroup;
-    wgpu::RenderPipeline m_pipeline;
-    wgpu::RenderPipeline m_linePipeline;
+    wgpu::Buffer m_gridBuffer;
 
     wgpu::BindGroupLayout m_globalBindGroupLayout;
     wgpu::BindGroup m_globalBindGroup;

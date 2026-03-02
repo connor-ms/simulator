@@ -3,82 +3,17 @@
 #include <random>
 #include <glm/ext/matrix_clip_space.hpp>
 
-struct Particle
-{
-    glm::vec2 position;
-    glm::vec2 velocity;
-    glm::f32mat2x2 C;
-    float J;
-    float _pad;
-};
+const int GRID_OBJ_SIZE = 16;
+const int GRID_RES = 32;
 
-struct Line
-{
-    glm::vec3 p1;
-    float _pad1;
-    glm::vec3 p2;
-    float thickness;
-};
-
-// clang-format off
-float vertices[] = {
-    // triangle 1
-    -0.5f, -0.5f, 0.0f, 0.0f,
-     0.5f, -0.5f, 1.0f, 0.0f,
-     0.5f,  0.5f, 1.0f, 1.0f,
-
-    // triangle 2
-    -0.5f, -0.5f, 0.0f, 0.0f,
-     0.5f,  0.5f, 1.0f, 1.0f,
-    -0.5f,  0.5f, 1.0f, 0.0f,
-};
-
-float wrld[] = {
-    -0.5f, -0.5f,
-     0.5f, -0.5f,
-     0.5f,  0.5f,
-    -0.5f, -0.5f,
-     0.5f,  0.5f,
-    -0.5f,  0.5f,
-};
-// clang-format on
-
-int instanceCount = 1000;
-std::vector<Particle> instances(instanceCount);
-std::vector<Line> lines{};
+const int INST_SIZE = 40000;
 
 void Application::Render()
 {
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
 
     // Begin compute pass
-    wgpu::ComputePassDescriptor computePassDesc{};
-
-    {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_computePipeline);
-        computePass.SetBindGroup(0, m_globalBindGroup);
-        computePass.SetBindGroup(1, m_computeBindGroup);
-
-        uint32_t workgroupSize = 48;
-        uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
-
-        computePass.End();
-    }
-    {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_computePipeline2);
-        computePass.SetBindGroup(0, m_globalBindGroup);
-        computePass.SetBindGroup(1, m_computeBindGroup);
-
-        uint32_t workgroupSize = 48;
-        uint32_t workgroupCount = (static_cast<uint32_t>(instances.size()) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
-
-        computePass.End();
-    }
-
+    m_sim.onFrame(encoder);
     // End compute pass
 
     // Begin render pass
@@ -96,20 +31,7 @@ void Application::Render()
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
 
-    // Draw particles
-    pass.SetPipeline(m_pipeline);
-    pass.SetBindGroup(0, m_globalBindGroup);
-    pass.SetBindGroup(1, m_renderBindGroup);
-    pass.SetVertexBuffer(0, m_vb);
-    pass.Draw(6, static_cast<uint32_t>(instances.size()));
-
-    // Draw lines
-    pass.SetPipeline(m_linePipeline);
-    pass.SetBindGroup(0, m_globalBindGroup);
-    pass.SetBindGroup(1, m_lineRenderBindGroup);
-    pass.SetVertexBuffer(0, m_vb);
-    pass.Draw(6, static_cast<uint32_t>(lines.size()));
-
+    m_renderer.onFrame(pass);
     m_Gui.update(pass);
 
     pass.End();
@@ -240,34 +162,6 @@ void Application::initBindGroupLayout()
 {
     std::cout << "initBindGroupLayout" << std::endl;
 
-    // Compute layout
-    wgpu::BindGroupLayoutEntry computeEntry{};
-    computeEntry.binding = 0;
-    computeEntry.visibility = wgpu::ShaderStage::Compute;
-    computeEntry.buffer.type = wgpu::BufferBindingType::Storage;
-
-    wgpu::BindGroupLayoutDescriptor computeDesc{};
-    computeDesc.entryCount = 1;
-    computeDesc.entries = &computeEntry;
-    m_computeBindGroupLayout = m_device.CreateBindGroupLayout(&computeDesc);
-
-    if (!m_computeBindGroupLayout)
-        std::cout << "ERROR: Failed to create compute bind group layout!" << std::endl;
-
-    // Render layout
-    wgpu::BindGroupLayoutEntry renderEntry{};
-    renderEntry.binding = 0;
-    renderEntry.visibility = wgpu::ShaderStage::Vertex;
-    renderEntry.buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
-
-    wgpu::BindGroupLayoutDescriptor renderDesc{};
-    renderDesc.entryCount = 1;
-    renderDesc.entries = &renderEntry;
-    m_renderBindGroupLayout = m_device.CreateBindGroupLayout(&renderDesc);
-
-    if (!m_renderBindGroupLayout)
-        std::cout << "ERROR: Failed to create render bind group layout!" << std::endl;
-
     // Global layout
     wgpu::BindGroupLayoutEntry globalEntry{};
     globalEntry.binding = 0;
@@ -289,51 +183,6 @@ bool Application::initBuffers()
 {
     std::cout << "initBuffers" << std::endl;
 
-    // Quad vertex buffer
-    wgpu::BufferDescriptor vbDesc{};
-    vbDesc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    vbDesc.size = sizeof(vertices);
-    vbDesc.mappedAtCreation = false;
-    vbDesc.label = "Quad";
-    m_vb = m_device.CreateBuffer(&vbDesc);
-    m_device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
-
-    if (m_vb == nullptr)
-    {
-        std::cout << "ERROR: Failed to initialize quad vertex buffer." << std::endl;
-        return false;
-    }
-
-    // Particle buffer
-    wgpu::BufferDescriptor pbDesc{};
-    pbDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-    pbDesc.mappedAtCreation = false;
-    pbDesc.size = instances.size() * sizeof(Particle);
-    pbDesc.label = "Particle";
-    m_particleBuffer = m_device.CreateBuffer(&pbDesc);
-    m_device.GetQueue().WriteBuffer(m_particleBuffer, 0, instances.data(), instances.size() * sizeof(Particle));
-
-    if (m_particleBuffer == nullptr)
-    {
-        std::cout << "ERROR: Failed to initialize particle buffer." << std::endl;
-        return false;
-    }
-
-    // Line buffer
-    wgpu::BufferDescriptor nDesc{};
-    nDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-    nDesc.mappedAtCreation = false;
-    nDesc.size = lines.size() * sizeof(Line);
-    nDesc.label = "Line";
-    m_lineBuffer = m_device.CreateBuffer(&nDesc);
-    m_device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
-
-    if (m_lineBuffer == nullptr)
-    {
-        std::cout << "ERROR: Failed to initialize line buffer." << std::endl;
-        return false;
-    }
-
     // Global buffer
     wgpu::BufferDescriptor gDesc{};
     gDesc.size = sizeof(Globals);
@@ -348,63 +197,26 @@ bool Application::initBuffers()
         return false;
     }
 
+    // Grid buffer
+    wgpu::BufferDescriptor gridDesc{};
+    gridDesc.size = GRID_RES * GRID_OBJ_SIZE;
+    gridDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+    gridDesc.label = "Grid";
+    m_gridBuffer = m_device.CreateBuffer(&gridDesc);
+    // m_device.GetQueue().WriteBuffer(m_gridBuffer, 0, &m_globals, sizeof(Globals));
+
+    if (m_gridBuffer == nullptr)
+    {
+        std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
+        return false;
+    }
+
     return true;
 }
 
 void Application::initBindGroup()
 {
     std::cout << "initBindGroup" << std::endl;
-
-    uint32_t particleBufferSize = static_cast<uint32_t>(instances.size() * sizeof(Particle));
-    uint32_t lineBufferSize = static_cast<uint32_t>(lines.size() * sizeof(Line));
-
-    // Compute bind group
-    wgpu::BindGroupEntry computeEntry{};
-    computeEntry.binding = 0;
-    computeEntry.buffer = m_particleBuffer;
-    computeEntry.offset = 0;
-    computeEntry.size = particleBufferSize;
-
-    wgpu::BindGroupDescriptor computeDesc{};
-    computeDesc.layout = m_computeBindGroupLayout;
-    computeDesc.entryCount = 1;
-    computeDesc.entries = &computeEntry;
-    m_computeBindGroup = m_device.CreateBindGroup(&computeDesc);
-
-    if (!m_computeBindGroup)
-        std::cout << "ERROR: Failed to create compute bind group!" << std::endl;
-
-    // Render bind group
-    wgpu::BindGroupEntry renderEntry{};
-    renderEntry.binding = 0;
-    renderEntry.buffer = m_particleBuffer;
-    renderEntry.offset = 0;
-    renderEntry.size = particleBufferSize;
-
-    wgpu::BindGroupDescriptor renderDesc{};
-    renderDesc.layout = m_renderBindGroupLayout;
-    renderDesc.entryCount = 1;
-    renderDesc.entries = &renderEntry;
-    m_renderBindGroup = m_device.CreateBindGroup(&renderDesc);
-
-    if (!m_renderBindGroup)
-        std::cout << "ERROR: Failed to create render bind group!" << std::endl;
-
-    // Line bind group
-    wgpu::BindGroupEntry lineEntry{};
-    lineEntry.binding = 0;
-    lineEntry.buffer = m_lineBuffer;
-    lineEntry.offset = 0;
-    lineEntry.size = lineBufferSize;
-
-    wgpu::BindGroupDescriptor lineRenderDesc{};
-    lineRenderDesc.layout = m_renderBindGroupLayout;
-    lineRenderDesc.entryCount = 1;
-    lineRenderDesc.entries = &lineEntry;
-    m_lineRenderBindGroup = m_device.CreateBindGroup(&lineRenderDesc);
-
-    if (!m_lineRenderBindGroup)
-        std::cout << "ERROR: Failed to create line render bind group!" << std::endl;
 
     // Global bind group
     wgpu::BindGroupEntry globalEntry{};
@@ -419,206 +231,10 @@ void Application::initBindGroup()
     globalDesc.entries = &globalEntry;
     m_globalBindGroup = m_device.CreateBindGroup(&globalDesc);
 
-    if (!m_renderBindGroup)
+    if (!m_globalBindGroup)
         std::cout << "ERROR: Failed to create global bind group!" << std::endl;
 
     std::cout << "initBindGroup Done" << std::endl;
-}
-
-bool Application::initRenderPipeline()
-{
-    std::cout << "Creating render pipeline" << std::endl;
-
-    wgpu::ShaderModule particleShader = Util::loadShaderModule(SHADER_DIR "/particle.wgsl", m_device);
-    wgpu::ShaderModule lineShader = Util::loadShaderModule(SHADER_DIR "/line.wgsl", m_device);
-    if (!particleShader || !lineShader)
-    {
-        std::cout << "ERROR: Failed to load render shaders!" << std::endl;
-        return false;
-    }
-
-    wgpu::VertexAttribute attrs[2];
-
-    // pos
-    attrs[0].shaderLocation = 0;
-    attrs[0].format = wgpu::VertexFormat::Float32x2;
-    attrs[0].offset = 0;
-
-    // uv
-    attrs[1].shaderLocation = 1;
-    attrs[1].format = wgpu::VertexFormat::Float32x2;
-    attrs[1].offset = sizeof(float) * 2;
-
-    wgpu::VertexBufferLayout vbl{};
-    vbl.arrayStride = sizeof(float) * 4;
-    vbl.stepMode = wgpu::VertexStepMode::Vertex;
-    vbl.attributeCount = 2;
-    vbl.attributes = attrs;
-
-    wgpu::BindGroupLayout layouts[] = {
-        m_globalBindGroupLayout,
-        m_renderBindGroupLayout,
-    };
-
-    wgpu::PipelineLayoutDescriptor plDesc{};
-    plDesc.bindGroupLayoutCount = 2;
-    plDesc.bindGroupLayouts = layouts;
-    wgpu::PipelineLayout renderPipelineLayout = m_device.CreatePipelineLayout(&plDesc);
-
-    wgpu::ColorTargetState colorTarget{};
-    colorTarget.format = m_format;
-    colorTarget.writeMask = wgpu::ColorWriteMask::All;
-
-    // particle shader
-    {
-        wgpu::FragmentState frag{};
-        frag.module = particleShader;
-        frag.entryPoint = "fs_main";
-        frag.targetCount = 1;
-        frag.targets = &colorTarget;
-
-        wgpu::RenderPipelineDescriptor rp{};
-        rp.layout = renderPipelineLayout;
-        rp.vertex.module = particleShader;
-        rp.vertex.entryPoint = "vs_main";
-        rp.vertex.bufferCount = 1;
-        rp.vertex.buffers = &vbl;
-        rp.fragment = &frag;
-        rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-        rp.multisample.count = 1;
-
-        m_pipeline = m_device.CreateRenderPipeline(&rp);
-    }
-
-    // line shader
-    {
-        wgpu::FragmentState frag{};
-        frag.module = lineShader;
-        frag.entryPoint = "fs_main";
-        frag.targetCount = 1;
-        frag.targets = &colorTarget;
-
-        wgpu::RenderPipelineDescriptor rp{};
-        rp.layout = renderPipelineLayout;
-        rp.vertex.module = lineShader;
-        rp.vertex.entryPoint = "vs_main";
-        rp.vertex.bufferCount = 1;
-        rp.vertex.buffers = &vbl;
-        rp.fragment = &frag;
-        rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
-        rp.multisample.count = 1;
-
-        m_linePipeline = m_device.CreateRenderPipeline(&rp);
-    }
-
-    if (!m_linePipeline)
-    {
-        std::cout << "ERROR: Failed to create render pipeline!" << std::endl;
-        return false;
-    }
-    std::cout << "Render pipeline created" << std::endl;
-
-    return true;
-}
-
-bool Application::initCompute()
-{
-    std::cout << "initCompute" << std::endl;
-
-    // compute 1
-    {
-        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_device);
-
-        if (!computeShaderModule)
-        {
-            std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
-            return false;
-        }
-
-        if (!m_computeBindGroupLayout)
-        {
-            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
-            return false;
-        }
-
-        wgpu::BindGroupLayout layouts[] = {
-            m_globalBindGroupLayout,
-            m_computeBindGroupLayout,
-        };
-
-        wgpu::PipelineLayoutDescriptor plDesc{};
-        plDesc.bindGroupLayoutCount = 2;
-        plDesc.bindGroupLayouts = layouts;
-        m_computePipelineLayout = m_device.CreatePipelineLayout(&plDesc);
-
-        if (!m_computePipelineLayout)
-        {
-            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
-            return false;
-        }
-
-        wgpu::ComputePipelineDescriptor cpDesc{};
-        cpDesc.layout = m_computePipelineLayout;
-        cpDesc.compute.module = computeShaderModule;
-        cpDesc.compute.entryPoint = "computeSomething";
-        cpDesc.label = "Compute";
-
-        m_computePipeline = m_device.CreateComputePipeline(&cpDesc);
-        if (!m_computePipeline)
-        {
-            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
-            return false;
-        }
-    }
-
-    // compute 2
-    {
-        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute2.wgsl", m_device);
-
-        if (!computeShaderModule)
-        {
-            std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
-            return false;
-        }
-
-        if (!m_computeBindGroupLayout)
-        {
-            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
-            return false;
-        }
-
-        wgpu::BindGroupLayout layouts[] = {
-            m_globalBindGroupLayout,
-            m_computeBindGroupLayout,
-        };
-
-        wgpu::PipelineLayoutDescriptor plDesc{};
-        plDesc.bindGroupLayoutCount = 2;
-        plDesc.bindGroupLayouts = layouts;
-        m_computePipelineLayout2 = m_device.CreatePipelineLayout(&plDesc);
-
-        if (!m_computePipelineLayout2)
-        {
-            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
-            return false;
-        }
-
-        wgpu::ComputePipelineDescriptor cpDesc{};
-        cpDesc.layout = m_computePipelineLayout2;
-        cpDesc.compute.module = computeShaderModule;
-        cpDesc.compute.entryPoint = "computeSomething";
-        cpDesc.label = "Compute";
-
-        m_computePipeline2 = m_device.CreateComputePipeline(&cpDesc);
-        if (!m_computePipeline2)
-        {
-            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
-            return false;
-        }
-    }
-
-    std::cout << "initCompute Done" << std::endl;
-    return true;
 }
 
 bool Application::onInit()
@@ -644,20 +260,6 @@ bool Application::onInit()
         halfHeight,
         -1.f, 1.f);
 
-    // top & bottom world bounds
-    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
-    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, -m_globals.worldSize.y, 0), .thickness = 1.f});
-    // left & right world bounds
-    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(-m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
-    lines.push_back(Line{.p1 = glm::vec3(m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
-
-    std::random_device rand;
-    std::mt19937 generator(rand());
-    std::uniform_real_distribution<float> dist(-m_globals.worldSize.x, m_globals.worldSize.x);
-
-    for (int i = 0; i < instanceCount; i++)
-        instances.push_back({{dist(generator), dist(generator)}, glm::vec2(0), glm::f32mat2x2(0), float(0)});
-
     if (!initInstance())
         return false;
 
@@ -670,16 +272,16 @@ bool Application::onInit()
         return false;
 
     initBindGroup();
-
-    if (!initRenderPipeline())
-        return false;
-
-    if (!initCompute())
-        return false;
+    m_sim = Simulator();
+    m_sim.init(m_device, m_globalBindGroupLayout, m_globalBindGroup);
+    m_renderer = Renderer();
+    m_renderer.init(m_device, m_format, m_sim.m_particleBuffer, m_globals, m_globalBindGroupLayout, m_globalBindGroup);
 
     m_Gui = GUI();
     if (!m_Gui.init(m_device, m_format, m_window))
         return false;
+
+    // exit(1);
 
     return true;
 }

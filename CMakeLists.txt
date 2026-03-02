@@ -9,6 +9,9 @@ add_executable(app
     src/main.cpp
     src/core/Application.cpp
     src/core/Util.cpp
+    src/core/Simulator.cpp
+    src/core/Particle.cpp
+    src/core/Render.cpp
     src/gui/GUI.cpp
 )
 

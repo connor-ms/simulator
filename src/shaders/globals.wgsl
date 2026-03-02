@@ -15,6 +15,7 @@ struct Particle
 
 struct GridNode
 {
-    velocity: vec2f,
-    mass: f32,
+    mass: atomic<u32>,
+    vx: atomic<u32>,
+    vy: atomic<u32>,
 }
