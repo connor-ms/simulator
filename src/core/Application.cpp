@@ -12,30 +12,9 @@ void Application::Render()
 {
     wgpu::CommandEncoder encoder = m_device.CreateCommandEncoder();
 
-    // Begin compute pass
     m_sim.onFrame(encoder);
-    // End compute pass
-
-    // Begin render pass
-    wgpu::SurfaceTexture surfaceTexture;
-    m_surface.GetCurrentTexture(&surfaceTexture);
-
-    wgpu::RenderPassColorAttachment attachment{};
-    attachment.view = surfaceTexture.texture.CreateView();
-    attachment.loadOp = wgpu::LoadOp::Clear;
-    attachment.storeOp = wgpu::StoreOp::Store;
-
-    wgpu::RenderPassDescriptor renderpass{};
-    renderpass.colorAttachmentCount = 1;
-    renderpass.colorAttachments = &attachment;
-
-    wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
-
-    m_renderer.onFrame(pass);
-    m_Gui.update(pass);
-
-    pass.End();
-    // End render pass
+    m_renderer.onFrame(encoder);
+    m_Gui.update(encoder);
 
     wgpu::CommandBuffer commands = encoder.Finish();
     m_device.GetQueue().Submit(1, &commands);
@@ -275,10 +254,10 @@ bool Application::onInit()
     m_sim = Simulator();
     m_sim.init(m_device, m_globalBindGroupLayout, m_globalBindGroup);
     m_renderer = Renderer();
-    m_renderer.init(m_device, m_format, m_sim.m_particleBuffer, m_globals, m_globalBindGroupLayout, m_globalBindGroup);
+    m_renderer.init(m_device, m_format, m_surface, m_sim.m_particleBuffer, m_globals, m_globalBindGroupLayout, m_globalBindGroup);
 
     m_Gui = GUI();
-    if (!m_Gui.init(m_device, m_format, m_window))
+    if (!m_Gui.init(m_device, m_format, m_window, m_surface))
         return false;
 
     // exit(1);

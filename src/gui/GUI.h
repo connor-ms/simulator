@@ -11,6 +11,9 @@
 class GUI
 {
 public:
-    bool init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *window);
-    void update(wgpu::RenderPassEncoder encoder);
+    bool init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *window, wgpu::Surface surface);
+    void update(wgpu::CommandEncoder encoder);
+
+private:
+    wgpu::Surface m_surface;
 };

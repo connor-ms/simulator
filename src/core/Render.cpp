@@ -37,10 +37,11 @@ float wrld[] = {
 
 std::vector<Line> lines{};
 
-void Renderer::init(wgpu::Device device, wgpu::TextureFormat format, wgpu::Buffer pb, Globals m_globals, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals)
+void Renderer::init(wgpu::Device device, wgpu::TextureFormat format, wgpu::Surface surface, wgpu::Buffer pb, Globals m_globals, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals)
 {
     m_device = device;
     m_format = format;
+    m_surface = surface;
     m_particleBuffer = pb;
     m_globalBindGroupLayout = globalsLayout;
     m_globalBindGroup = globals;
@@ -239,8 +240,22 @@ void Renderer::initPipeline()
     std::cout << "Render pipeline created" << std::endl;
 }
 
-void Renderer::onFrame(wgpu::RenderPassEncoder pass)
+void Renderer::onFrame(wgpu::CommandEncoder encoder)
 {
+    wgpu::SurfaceTexture surfaceTexture;
+    m_surface.GetCurrentTexture(&surfaceTexture);
+
+    wgpu::RenderPassColorAttachment attachment{};
+    attachment.view = surfaceTexture.texture.CreateView();
+    attachment.loadOp = wgpu::LoadOp::Clear;
+    attachment.storeOp = wgpu::StoreOp::Store;
+
+    wgpu::RenderPassDescriptor renderpass{};
+    renderpass.colorAttachmentCount = 1;
+    renderpass.colorAttachments = &attachment;
+
+    wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
+
     // Draw particles
     pass.SetPipeline(m_pipeline);
     pass.SetBindGroup(0, m_globalBindGroup);
@@ -254,4 +269,6 @@ void Renderer::onFrame(wgpu::RenderPassEncoder pass)
     pass.SetBindGroup(1, m_lineRenderBindGroup);
     pass.SetVertexBuffer(0, m_vb);
     pass.Draw(6, static_cast<uint32_t>(lines.size()));
+
+    pass.End();
 }

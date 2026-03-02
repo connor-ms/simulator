@@ -12,16 +12,18 @@ struct Globals;
 class Renderer
 {
 public:
-    void init(wgpu::Device device, wgpu::TextureFormat format, wgpu::Buffer pb, Globals g, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals);
+    void init(wgpu::Device device, wgpu::TextureFormat format, wgpu::Surface surface, wgpu::Buffer pb, Globals g, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals);
     void initBindGroupLayouts();
     void initBuffers();
     void initBindGroups();
     void initPipeline();
-    void onFrame(wgpu::RenderPassEncoder pass);
+    void onFrame(wgpu::CommandEncoder encoder);
 
 private:
     wgpu::Device m_device;
     wgpu::TextureFormat m_format;
+
+    wgpu::Surface m_surface;
 
     wgpu::BindGroupLayout m_bindGroupLayout;
     wgpu::BindGroup m_bindGroup;

@@ -88,7 +88,7 @@ void applyTheme()
     // clang-format on
 }
 
-bool GUI::init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *window)
+bool GUI::init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *window, wgpu::Surface surface)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -100,13 +100,29 @@ bool GUI::init(wgpu::Device device, wgpu::TextureFormat format, GLFWwindow *wind
     info.Device = device.Get();
     info.RenderTargetFormat = static_cast<WGPUTextureFormat>(format);
 
+    m_surface = surface;
+
     ImGui_ImplGlfw_InitForOther(window, true);
     ImGui_ImplWGPU_Init(&info);
     return true;
 }
 
-void GUI::update(wgpu::RenderPassEncoder encoder)
+void GUI::update(wgpu::CommandEncoder encoder)
 {
+    wgpu::SurfaceTexture surfaceTexture;
+    m_surface.GetCurrentTexture(&surfaceTexture);
+
+    wgpu::RenderPassColorAttachment attachment{};
+    attachment.view = surfaceTexture.texture.CreateView();
+    attachment.loadOp = wgpu::LoadOp::Load;
+    attachment.storeOp = wgpu::StoreOp::Store;
+
+    wgpu::RenderPassDescriptor renderpass{};
+    renderpass.colorAttachmentCount = 1;
+    renderpass.colorAttachments = &attachment;
+
+    wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
+
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -140,5 +156,7 @@ void GUI::update(wgpu::RenderPassEncoder encoder)
 
     ImGui::EndFrame();
     ImGui::Render();
-    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), encoder.Get());
+    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass.Get());
+
+    pass.End();
 }
