@@ -29,7 +29,7 @@ bool Application::init()
     initBindGroup();
 
     m_sim.init(&m_ctx);
-    m_renderer.init(m_ctx.device, m_ctx.format, m_ctx.surface, m_sim.getState()->particleBuffer, m_ctx.globals, m_ctx.globalsBindGroupLayout, m_ctx.globalsBindGroup);
+    m_renderer.init(&m_ctx, m_sim.getState());
 
     if (!m_Gui.init(m_ctx.device, m_ctx.format, m_window, m_ctx.surface))
         return false;

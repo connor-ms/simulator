@@ -6,13 +6,15 @@
 #include <glm/glm.hpp>
 #include <iostream>
 #include <vector>
+#include "GPUContext.h"
+#include "Simulator.h"
 
 struct Globals;
 
 class Renderer
 {
 public:
-    void init(wgpu::Device device, wgpu::TextureFormat format, wgpu::Surface surface, wgpu::Buffer pb, Globals g, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals);
+    void init(GPUContext *ctx, SimulationState *simState);
     void initBindGroupLayouts();
     void initBuffers();
     void initBindGroups();
@@ -20,20 +22,14 @@ public:
     void onFrame(wgpu::CommandEncoder encoder);
 
 private:
-    wgpu::Device m_device;
-    wgpu::TextureFormat m_format;
-
-    wgpu::Surface m_surface;
+    GPUContext *m_ctx;
+    SimulationState *m_simState;
 
     wgpu::BindGroupLayout m_bindGroupLayout;
     wgpu::BindGroup m_bindGroup;
 
-    wgpu::BindGroupLayout m_globalBindGroupLayout;
-    wgpu::BindGroup m_globalBindGroup;
-
     wgpu::Buffer m_vb;
     wgpu::Buffer m_lineBuffer;
-    wgpu::Buffer m_particleBuffer;
 
     wgpu::BindGroupLayout m_renderBindGroupLayout;
     wgpu::BindGroup m_renderBindGroup;

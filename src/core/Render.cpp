@@ -2,8 +2,6 @@
 #include "Util.h"
 #include "Application.h"
 
-const int INST_SIZE = 40000;
-
 struct Line
 {
     glm::vec3 p1;
@@ -37,21 +35,17 @@ float wrld[] = {
 
 std::vector<Line> lines{};
 
-void Renderer::init(wgpu::Device device, wgpu::TextureFormat format, wgpu::Surface surface, wgpu::Buffer pb, Globals m_globals, wgpu::BindGroupLayout globalsLayout, wgpu::BindGroup globals)
+void Renderer::init(GPUContext *ctx, SimulationState *simState)
 {
-    m_device = device;
-    m_format = format;
-    m_surface = surface;
-    m_particleBuffer = pb;
-    m_globalBindGroupLayout = globalsLayout;
-    m_globalBindGroup = globals;
+    m_ctx = ctx;
+    m_simState = simState;
 
     // top & bottom world bounds
-    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
-    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, -m_globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(-m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(-m_ctx->globals.worldSize.x, -m_ctx->globals.worldSize.y, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, -m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
     // left & right world bounds
-    lines.push_back(Line{.p1 = glm::vec3(-m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(-m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
-    lines.push_back(Line{.p1 = glm::vec3(m_globals.worldSize.x, -m_globals.worldSize.y, 0), .p2 = glm::vec3(m_globals.worldSize.x, m_globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(-m_ctx->globals.worldSize.x, -m_ctx->globals.worldSize.y, 0), .p2 = glm::vec3(-m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(m_ctx->globals.worldSize.x, -m_ctx->globals.worldSize.y, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
 
     initBindGroupLayouts();
     initBuffers();
@@ -70,7 +64,7 @@ void Renderer::initBindGroupLayouts()
     wgpu::BindGroupLayoutDescriptor renderDesc{};
     renderDesc.entryCount = 1;
     renderDesc.entries = &renderEntry;
-    m_renderBindGroupLayout = m_device.CreateBindGroupLayout(&renderDesc);
+    m_renderBindGroupLayout = m_ctx->device.CreateBindGroupLayout(&renderDesc);
 
     if (!m_renderBindGroupLayout)
         std::cout << "ERROR: Failed to create render bind group layout!" << std::endl;
@@ -84,8 +78,8 @@ void Renderer::initBuffers()
     vbDesc.size = sizeof(vertices);
     vbDesc.mappedAtCreation = false;
     vbDesc.label = "Quad";
-    m_vb = m_device.CreateBuffer(&vbDesc);
-    m_device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
+    m_vb = m_ctx->device.CreateBuffer(&vbDesc);
+    m_ctx->device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
 
     if (m_vb == nullptr)
     {
@@ -99,8 +93,8 @@ void Renderer::initBuffers()
     nDesc.mappedAtCreation = false;
     nDesc.size = lines.size() * sizeof(Line);
     nDesc.label = "Line";
-    m_lineBuffer = m_device.CreateBuffer(&nDesc);
-    m_device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
+    m_lineBuffer = m_ctx->device.CreateBuffer(&nDesc);
+    m_ctx->device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
 
     if (m_lineBuffer == nullptr)
     {
@@ -116,15 +110,15 @@ void Renderer::initBindGroups()
     // Render bind group
     wgpu::BindGroupEntry renderEntry{};
     renderEntry.binding = 0;
-    renderEntry.buffer = m_particleBuffer;
+    renderEntry.buffer = m_simState->particleBuffer;
     renderEntry.offset = 0;
-    renderEntry.size = INST_SIZE;
+    renderEntry.size = m_simState->particles.size() * sizeof(Particle);
 
     wgpu::BindGroupDescriptor renderDesc{};
     renderDesc.layout = m_renderBindGroupLayout;
     renderDesc.entryCount = 1;
     renderDesc.entries = &renderEntry;
-    m_renderBindGroup = m_device.CreateBindGroup(&renderDesc);
+    m_renderBindGroup = m_ctx->device.CreateBindGroup(&renderDesc);
 
     if (!m_renderBindGroup)
         std::cout << "ERROR: Failed to create render bind group!" << std::endl;
@@ -140,7 +134,7 @@ void Renderer::initBindGroups()
     lineRenderDesc.layout = m_renderBindGroupLayout;
     lineRenderDesc.entryCount = 1;
     lineRenderDesc.entries = &lineEntry;
-    m_lineRenderBindGroup = m_device.CreateBindGroup(&lineRenderDesc);
+    m_lineRenderBindGroup = m_ctx->device.CreateBindGroup(&lineRenderDesc);
 
     if (!m_lineRenderBindGroup)
         std::cout << "ERROR: Failed to create line render bind group!" << std::endl;
@@ -150,8 +144,8 @@ void Renderer::initPipeline()
 {
     std::cout << "Creating render pipeline" << std::endl;
 
-    wgpu::ShaderModule particleShader = Util::loadShaderModule(SHADER_DIR "/particle.wgsl", m_device);
-    wgpu::ShaderModule lineShader = Util::loadShaderModule(SHADER_DIR "/line.wgsl", m_device);
+    wgpu::ShaderModule particleShader = Util::loadShaderModule(SHADER_DIR "/particle.wgsl", m_ctx->device);
+    wgpu::ShaderModule lineShader = Util::loadShaderModule(SHADER_DIR "/line.wgsl", m_ctx->device);
     if (!particleShader || !lineShader)
     {
         std::cout << "ERROR: Failed to load render shaders!" << std::endl;
@@ -177,17 +171,17 @@ void Renderer::initPipeline()
     vbl.attributes = attrs;
 
     wgpu::BindGroupLayout layouts[] = {
-        m_globalBindGroupLayout,
+        m_ctx->globalsBindGroupLayout,
         m_renderBindGroupLayout,
     };
 
     wgpu::PipelineLayoutDescriptor plDesc{};
     plDesc.bindGroupLayoutCount = 2;
     plDesc.bindGroupLayouts = layouts;
-    wgpu::PipelineLayout renderPipelineLayout = m_device.CreatePipelineLayout(&plDesc);
+    wgpu::PipelineLayout renderPipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
 
     wgpu::ColorTargetState colorTarget{};
-    colorTarget.format = m_format;
+    colorTarget.format = m_ctx->format;
     colorTarget.writeMask = wgpu::ColorWriteMask::All;
 
     // particle shader
@@ -208,7 +202,7 @@ void Renderer::initPipeline()
         rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
         rp.multisample.count = 1;
 
-        m_pipeline = m_device.CreateRenderPipeline(&rp);
+        m_pipeline = m_ctx->device.CreateRenderPipeline(&rp);
     }
 
     // line shader
@@ -229,7 +223,7 @@ void Renderer::initPipeline()
         rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
         rp.multisample.count = 1;
 
-        m_linePipeline = m_device.CreateRenderPipeline(&rp);
+        m_linePipeline = m_ctx->device.CreateRenderPipeline(&rp);
     }
 
     if (!m_linePipeline)
@@ -243,7 +237,7 @@ void Renderer::initPipeline()
 void Renderer::onFrame(wgpu::CommandEncoder encoder)
 {
     wgpu::SurfaceTexture surfaceTexture;
-    m_surface.GetCurrentTexture(&surfaceTexture);
+    m_ctx->surface.GetCurrentTexture(&surfaceTexture);
 
     wgpu::RenderPassColorAttachment attachment{};
     attachment.view = surfaceTexture.texture.CreateView();
@@ -258,14 +252,14 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
 
     // Draw particles
     pass.SetPipeline(m_pipeline);
-    pass.SetBindGroup(0, m_globalBindGroup);
+    pass.SetBindGroup(0, m_ctx->globalsBindGroup);
     pass.SetBindGroup(1, m_renderBindGroup);
     pass.SetVertexBuffer(0, m_vb);
-    pass.Draw(6, static_cast<uint32_t>(INST_SIZE));
+    pass.Draw(6, static_cast<uint32_t>(m_simState->particles.size() * sizeof(Particle)));
 
     // Draw lines
     pass.SetPipeline(m_linePipeline);
-    pass.SetBindGroup(0, m_globalBindGroup);
+    pass.SetBindGroup(0, m_ctx->globalsBindGroup);
     pass.SetBindGroup(1, m_lineRenderBindGroup);
     pass.SetVertexBuffer(0, m_vb);
     pass.Draw(6, static_cast<uint32_t>(lines.size()));

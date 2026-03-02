@@ -1,3 +1,5 @@
+#pragma once
+
 #include <webgpu/webgpu_cpp.h>
 #include "Particle.h"
 #include "GPUContext.h"
