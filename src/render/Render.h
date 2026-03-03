@@ -6,8 +6,9 @@
 #include <glm/glm.hpp>
 #include <iostream>
 #include <vector>
-#include "GPUContext.h"
-#include "Simulator.h"
+
+#include "../core/GPUContext.h"
+#include "../simulation/Simulator.h"
 
 struct Globals;
 

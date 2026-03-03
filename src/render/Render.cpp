@@ -1,6 +1,6 @@
 #include "Render.h"
-#include "Util.h"
-#include "Application.h"
+#include "../core/Util.h"
+#include "../core/Application.h"
 
 struct Line
 {

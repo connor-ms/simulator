@@ -1,6 +1,6 @@
 #include "Simulator.h"
 #include <iostream>
-#include "Util.h"
+#include "../core/Util.h"
 
 void Simulator::init(GPUContext *ctx)
 {

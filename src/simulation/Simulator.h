@@ -2,7 +2,7 @@
 
 #include <webgpu/webgpu_cpp.h>
 #include "Particle.h"
-#include "GPUContext.h"
+#include "../core/GPUContext.h"
 
 struct SimulationState
 {

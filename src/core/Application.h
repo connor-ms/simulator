@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "../gui/GUI.h"
-#include "Simulator.h"
-#include "Render.h"
+#include "../simulation/Simulator.h"
+#include "../render/Render.h"
 #include "GPUContext.h"
 
 class Application
