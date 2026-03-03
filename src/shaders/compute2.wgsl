@@ -1,5 +1,6 @@
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(1) @binding(0) var<storage, read_write> particles: array<Particle>;
+@group(1) @binding(1) var<storage, read_write> gridNodes: array<GridNode>;
 
 @compute @workgroup_size(64)
 fn computeSomething(@builtin(global_invocation_id) id: vec3<u32>) {

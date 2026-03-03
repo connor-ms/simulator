@@ -7,6 +7,7 @@
 struct SimulationState
 {
     wgpu::Buffer particleBuffer;
+    wgpu::Buffer gridBuffer;
     std::vector<Particle> particles;
 };
 

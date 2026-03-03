@@ -15,7 +15,9 @@ struct Particle
 
 struct GridNode
 {
+    vX: atomic<u32>,
+    vY: atomic<u32>,
     mass: atomic<u32>,
-    vx: atomic<u32>,
-    vy: atomic<u32>,
 }
+
+const GRID_SIZE = 128;

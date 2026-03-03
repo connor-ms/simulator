@@ -1,6 +1,8 @@
 #include "Simulator.h"
 #include <iostream>
+
 #include "../core/Util.h"
+#include "Grid.h"
 
 void Simulator::init(GPUContext *ctx)
 {
@@ -15,14 +17,19 @@ void Simulator::init(GPUContext *ctx)
 
 void Simulator::initBindGroupLayouts()
 {
-    wgpu::BindGroupLayoutEntry computeEntry{};
-    computeEntry.binding = 0;
-    computeEntry.visibility = wgpu::ShaderStage::Compute;
-    computeEntry.buffer.type = wgpu::BufferBindingType::Storage;
+    wgpu::BindGroupLayoutEntry layouts[2];
+
+    layouts[0].binding = 0;
+    layouts[0].visibility = wgpu::ShaderStage::Compute;
+    layouts[0].buffer.type = wgpu::BufferBindingType::Storage;
+
+    layouts[1].binding = 1;
+    layouts[1].visibility = wgpu::ShaderStage::Compute;
+    layouts[1].buffer.type = wgpu::BufferBindingType::Storage;
 
     wgpu::BindGroupLayoutDescriptor computeDesc{};
-    computeDesc.entryCount = 1;
-    computeDesc.entries = &computeEntry;
+    computeDesc.entryCount = 2;
+    computeDesc.entries = layouts;
     m_bindGroupLayout = m_ctx->device.CreateBindGroupLayout(&computeDesc);
 
     if (!m_bindGroupLayout)
@@ -32,17 +39,34 @@ void Simulator::initBindGroupLayouts()
 void Simulator::initBuffers()
 {
     // Particle buffer
-    wgpu::BufferDescriptor desc{};
-    desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-    desc.mappedAtCreation = false;
-    desc.size = m_state.particles.size() * sizeof(Particle);
-    desc.label = "Particle";
-    m_state.particleBuffer = m_ctx->device.CreateBuffer(&desc);
-    m_ctx->device.GetQueue().WriteBuffer(m_state.particleBuffer, 0, m_state.particles.data(), m_state.particles.size() * sizeof(Particle));
-
-    if (m_state.particleBuffer == nullptr)
     {
-        std::cout << "ERROR: Failed to initialize particle buffer." << std::endl;
+        wgpu::BufferDescriptor desc{};
+        desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+        desc.mappedAtCreation = false;
+        desc.size = m_state.particles.size() * sizeof(Particle);
+        desc.label = "Particle";
+        m_state.particleBuffer = m_ctx->device.CreateBuffer(&desc);
+        m_ctx->device.GetQueue().WriteBuffer(m_state.particleBuffer, 0, m_state.particles.data(), m_state.particles.size() * sizeof(Particle));
+
+        if (m_state.particleBuffer == nullptr)
+        {
+            std::cout << "ERROR: Failed to initialize particle buffer." << std::endl;
+        }
+    }
+
+    // GridNode buffer
+    {
+        wgpu::BufferDescriptor desc{};
+        desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+        desc.mappedAtCreation = false;
+        desc.size = GRID_SIZE * GRID_SIZE * sizeof(GridNode);
+        desc.label = "GridNodes";
+        m_state.gridBuffer = m_ctx->device.CreateBuffer(&desc);
+
+        if (m_state.gridBuffer == nullptr)
+        {
+            std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
+        }
     }
 }
 
@@ -50,19 +74,22 @@ void Simulator::initBindGroups()
 {
     uint32_t particleBufferSize = static_cast<uint32_t>(m_state.particles.size() * sizeof(Particle));
 
-    std::cout << particleBufferSize << std::endl;
+    wgpu::BindGroupEntry entries[2];
 
-    // Compute bind group
-    wgpu::BindGroupEntry computeEntry{};
-    computeEntry.binding = 0;
-    computeEntry.buffer = m_state.particleBuffer;
-    computeEntry.offset = 0;
-    computeEntry.size = particleBufferSize;
+    entries[0].binding = 0;
+    entries[0].buffer = m_state.particleBuffer;
+    entries[0].offset = 0;
+    entries[0].size = particleBufferSize;
+
+    entries[1].binding = 1;
+    entries[1].buffer = m_state.gridBuffer;
+    entries[1].offset = 0;
+    entries[1].size = GRID_SIZE * GRID_SIZE * sizeof(GridNode);
 
     wgpu::BindGroupDescriptor computeDesc{};
     computeDesc.layout = m_bindGroupLayout;
-    computeDesc.entryCount = 1;
-    computeDesc.entries = &computeEntry;
+    computeDesc.entryCount = 2;
+    computeDesc.entries = entries;
     m_bindGroup = m_ctx->device.CreateBindGroup(&computeDesc);
 
     if (!m_bindGroup)
@@ -75,11 +102,11 @@ void Simulator::initPipeline()
 
     // compute 1
     {
-        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute.wgsl", m_ctx->device);
+        wgpu::ShaderModule clearGrid = Util::loadShaderModule(SHADER_DIR "/clearGrid.wgsl", m_ctx->device);
 
-        if (!computeShaderModule)
+        if (!clearGrid)
         {
-            std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
+            std::cout << "ERROR: Failed to load clearGrid.wgsl!" << std::endl;
             return;
         }
 
@@ -107,9 +134,9 @@ void Simulator::initPipeline()
 
         wgpu::ComputePipelineDescriptor cpDesc{};
         cpDesc.layout = m_computePipelineLayout;
-        cpDesc.compute.module = computeShaderModule;
-        cpDesc.compute.entryPoint = "computeSomething";
-        cpDesc.label = "Compute";
+        cpDesc.compute.module = clearGrid;
+        cpDesc.compute.entryPoint = "clearGrid";
+        cpDesc.label = "clearGrid";
 
         m_computePipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
         if (!m_computePipeline)
