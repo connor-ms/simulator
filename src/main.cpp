@@ -4,8 +4,7 @@ int main()
 {
     static auto app = std::make_unique<Application>();
 
-    if (!app->init())
-        return 1;
+    app->init();
 
 #if defined(__EMSCRIPTEN__)
     emscripten_set_main_loop_arg(

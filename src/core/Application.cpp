@@ -6,39 +6,26 @@
 const int GRID_OBJ_SIZE = 16;
 const int GRID_RES = 32;
 
-bool Application::init()
+void Application::init()
 {
-    if (!initWindow())
-        return false;
-
-    if (!initInstance())
-        return false;
-
-    if (!initSurface())
-        return false;
-
+    initWindow();
+    initInstance();
+    initSurface();
     initGlobals();
-
     initBindGroupLayout();
-
-    if (!initBuffers())
-        return false;
-
+    initBuffers();
     initBindGroup();
 
     m_sim.init(&m_ctx);
     m_renderer.init(&m_ctx, m_sim.getState());
     m_gui.init(&m_ctx, m_window);
-
-    return true;
 }
 
-bool Application::initWindow()
+void Application::initWindow()
 {
     if (!glfwInit())
     {
-        std::cout << "Failed to initialize GLFW!" << std::endl;
-        return false;
+        std::runtime_error("Failed to initialize GLFW!");
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -46,8 +33,7 @@ bool Application::initWindow()
 
     if (!m_window)
     {
-        std::cout << "Failed to create window!" << std::endl;
-        return false;
+        std::runtime_error("Failed to create window!");
     }
 
     // clang-format off
@@ -75,11 +61,9 @@ bool Application::initWindow()
         if (that != nullptr) that->onScroll(xoffset, yoffset);
     });
     // clang-format on
-
-    return true;
 }
 
-bool Application::initInstance()
+void Application::initInstance()
 {
     static const auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
     wgpu::InstanceDescriptor instanceDesc{.requiredFeatureCount = 1, .requiredFeatures = &kTimedWaitAny};
@@ -88,7 +72,7 @@ bool Application::initInstance()
     if (!m_ctx.instance)
     {
         std::cout << "Failed to initialize WebGPU!" << std::endl;
-        return false;
+        std::runtime_error("Failed to create window!");
     }
 
     std::cout << "Requesting adapter..." << std::endl;
@@ -127,11 +111,9 @@ bool Application::initInstance()
         });
     m_ctx.instance.WaitAny(f2, UINT64_MAX);
     std::cout << "Got device!" << std::endl;
-
-    return true;
 }
 
-bool Application::initSurface()
+void Application::initSurface()
 {
     std::cout << "Creating surface..." << std::endl;
     m_ctx.surface = wgpu::glfw::CreateSurfaceForWindow(m_ctx.instance, m_window);
@@ -146,8 +128,6 @@ bool Application::initSurface()
     wgpu::SurfaceConfiguration config{.device = m_ctx.device, .format = m_ctx.format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
     m_ctx.surface.Configure(&config);
     std::cout << "Surface created!" << std::endl;
-
-    return true;
 }
 
 void Application::initGlobals()
@@ -187,12 +167,14 @@ void Application::initBindGroupLayout()
     m_ctx.globalsBindGroupLayout = m_ctx.device.CreateBindGroupLayout(&globalDesc);
 
     if (!m_ctx.globalsBindGroupLayout)
-        std::cout << "ERROR: Failed to create global bind group layout!" << std::endl;
+    {
+        std::runtime_error("Failed to create global bind group layout!");
+    }
 
     std::cout << "initBindGroupLayout Done" << std::endl;
 }
 
-bool Application::initBuffers()
+void Application::initBuffers()
 {
     std::cout << "initBuffers" << std::endl;
 
@@ -206,8 +188,7 @@ bool Application::initBuffers()
 
     if (m_ctx.globalsBuffer == nullptr)
     {
-        std::cout << "ERROR: Failed to initialize global buffer." << std::endl;
-        return false;
+        std::runtime_error("Failed to initialize global buffer!");
     }
 
     // Grid buffer
@@ -223,8 +204,6 @@ bool Application::initBuffers()
     //     std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
     //     return false;
     // }
-
-    return true;
 }
 
 void Application::initBindGroup()

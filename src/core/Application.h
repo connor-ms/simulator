@@ -18,9 +18,9 @@
 class Application
 {
 public:
-    bool init();
-
+    void init();
     void onFrame();
+
     bool isRunning();
     void onResize(uint32_t width, uint32_t height);
     void onMouseMove(double xpos, double ypos) {}
@@ -28,12 +28,12 @@ public:
     void onScroll(double xoffset, double yoffset) {}
 
 private:
-    bool initWindow();
-    bool initInstance();
-    bool initSurface();
+    void initWindow();
+    void initInstance();
+    void initSurface();
     void initGlobals();
     void initBindGroupLayout();
-    bool initBuffers();
+    void initBuffers();
     void initBindGroup();
 
     GLFWwindow *m_window;
