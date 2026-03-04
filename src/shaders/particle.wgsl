@@ -16,7 +16,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
     let radius = vec2<f32>(5, 5);
 
     let particle = particles[instanceIndex];
-    let worldPos = particle.position + pos * radius;
+    let worldPos = (particle.position + pos * radius) - (vec2f(globals.worldSize.x, globals.worldSize.y) * 0.5);
 
     out.position = globals.proj * vec4<f32>(worldPos, 0.0, 1.0);
     out.uv = uv;

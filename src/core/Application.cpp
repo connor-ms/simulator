@@ -134,7 +134,7 @@ void Application::initGlobals()
 
     m_ctx.globals = Globals{
         .windowSize = glm::vec2(fbWidth, fbHeight),
-        .worldSize = glm::vec4(256, 256, 256, 0),
+        .worldSize = glm::vec4(1000, 1000, 0, 0),
     };
 
     float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
@@ -148,11 +148,11 @@ void Application::initGlobals()
         -1.f, 1.f);
 
     m_ctx.globals.gridSize = 128;
-    m_ctx.globals.dX = 1.0 / m_ctx.globals.gridSize;
-    m_ctx.globals.idX = m_ctx.globals.gridSize;
-    m_ctx.globals.dt = 0.001;
+    m_ctx.globals.dX = m_ctx.globals.worldSize.x / m_ctx.globals.gridSize;
+    m_ctx.globals.idX = 1 / m_ctx.globals.dX;
+    m_ctx.globals.dt = .05;
     m_ctx.globals.particleMass = 1;
-    m_ctx.globals.particleCount = 1000000;
+    m_ctx.globals.particleCount = 10000;
 }
 
 void Application::initBindGroupLayout()
