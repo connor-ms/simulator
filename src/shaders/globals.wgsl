@@ -3,6 +3,12 @@ struct Globals
     windowSize: vec2<f32>,
     worldSize: vec3<f32>,
     proj: mat4x4<f32>,
+    gridSize: u32,
+    dX: f32,
+    idX: f32,
+    dt: f32,
+    particleMass: f32,
+    particleCount: u32,
 };
 
 struct Particle
@@ -19,5 +25,3 @@ struct GridNode
     vY: atomic<u32>,
     mass: atomic<u32>,
 }
-
-const GRID_SIZE = 128;

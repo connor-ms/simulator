@@ -3,9 +3,6 @@
 #include <random>
 #include <glm/ext/matrix_clip_space.hpp>
 
-const int GRID_OBJ_SIZE = 16;
-const int GRID_RES = 32;
-
 void Application::init()
 {
     initWindow();
@@ -149,6 +146,13 @@ void Application::initGlobals()
         -halfHeight,
         halfHeight,
         -1.f, 1.f);
+
+    m_ctx.globals.gridSize = 128;
+    m_ctx.globals.dX = 1.0 / m_ctx.globals.gridSize;
+    m_ctx.globals.idX = m_ctx.globals.gridSize;
+    m_ctx.globals.dt = 0.001;
+    m_ctx.globals.particleMass = 1;
+    m_ctx.globals.particleCount = 1000;
 }
 
 void Application::initBindGroupLayout()
@@ -174,6 +178,8 @@ void Application::initBindGroupLayout()
     std::cout << "initBindGroupLayout Done" << std::endl;
 }
 
+// TODO: figure out when performance dropped :(
+
 void Application::initBuffers()
 {
     std::cout << "initBuffers" << std::endl;
@@ -190,20 +196,6 @@ void Application::initBuffers()
     {
         std::runtime_error("Failed to initialize global buffer!");
     }
-
-    // Grid buffer
-    // wgpu::BufferDescriptor gridDesc{};
-    // gridDesc.size = GRID_RES * GRID_OBJ_SIZE;
-    // gridDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-    // gridDesc.label = "Grid";
-    // m_gridBuffer = m_device.CreateBuffer(&gridDesc);
-    // // m_device.GetQueue().WriteBuffer(m_gridBuffer, 0, &m_globals, sizeof(Globals));
-
-    // if (m_gridBuffer == nullptr)
-    // {
-    //     std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
-    //     return false;
-    // }
 }
 
 void Application::initBindGroup()
