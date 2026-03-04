@@ -152,7 +152,7 @@ void Application::initGlobals()
     m_ctx.globals.idX = m_ctx.globals.gridSize;
     m_ctx.globals.dt = 0.001;
     m_ctx.globals.particleMass = 1;
-    m_ctx.globals.particleCount = 1000;
+    m_ctx.globals.particleCount = 1000000;
 }
 
 void Application::initBindGroupLayout()
@@ -177,8 +177,6 @@ void Application::initBindGroupLayout()
 
     std::cout << "initBindGroupLayout Done" << std::endl;
 }
-
-// TODO: figure out when performance dropped :(
 
 void Application::initBuffers()
 {
