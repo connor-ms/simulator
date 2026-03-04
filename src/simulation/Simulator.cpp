@@ -157,7 +157,30 @@ void Simulator::initPipeline()
 
         if (!m_p2gPipeline)
         {
-            std::runtime_error("Failed to create compute pipeline!");
+            std::runtime_error("Failed to create p2g pipeline!");
+        }
+    }
+
+    // update grid
+    {
+        wgpu::ShaderModule updateGrid = Util::loadShaderModule(SHADER_DIR "/updateGrid.wgsl", m_ctx->device);
+
+        if (!updateGrid)
+        {
+            std::runtime_error("Failed to load updateGrid.wgsl!");
+        }
+
+        wgpu::ComputePipelineDescriptor cpDesc{};
+        cpDesc.layout = m_computePipelineLayout;
+        cpDesc.compute.module = updateGrid;
+        cpDesc.compute.entryPoint = "updateGrid";
+        cpDesc.label = "updateGrid";
+
+        m_updateGridPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
+
+        if (!m_updateGridPipeline)
+        {
+            std::runtime_error("Failed to create updateGrid pipeline!");
         }
     }
 
@@ -190,6 +213,20 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
         uint32_t workgroupSize = 64;
         uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
         computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+
+        computePass.End();
+    }
+
+    // Update grid pass
+    {
+        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+        computePass.SetPipeline(m_updateGridPipeline);
+        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+        computePass.SetBindGroup(1, m_bindGroup);
+
+        uint32_t workgroupSize = 8;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
+        computePass.DispatchWorkgroups(workgroupCount, workgroupCount, 1);
 
         computePass.End();
     }

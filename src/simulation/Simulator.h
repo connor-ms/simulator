@@ -34,4 +34,5 @@ private:
 
     wgpu::ComputePipeline m_clearGridPipeline;
     wgpu::ComputePipeline m_p2gPipeline;
+    wgpu::ComputePipeline m_updateGridPipeline;
 };
