@@ -10,7 +10,7 @@ fn clearGrid(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let index = id.x + id.y * globals.gridSize;
 
-    atomicStore(&grid[index].mass, 0u);
-    atomicStore(&grid[index].vX, 0u);
-    atomicStore(&grid[index].vY, 0u);
+    atomicStore(&grid[index].mass, 0);
+    atomicStore(&grid[index].vX, 0);
+    atomicStore(&grid[index].vY, 0);
 }

@@ -31,8 +31,7 @@ private:
     wgpu::BindGroup m_bindGroup;
 
     wgpu::PipelineLayout m_computePipelineLayout;
-    wgpu::ComputePipeline m_computePipeline;
 
-    wgpu::PipelineLayout m_computePipelineLayout2;
-    wgpu::ComputePipeline m_computePipeline2;
+    wgpu::ComputePipeline m_clearGridPipeline;
+    wgpu::ComputePipeline m_p2gPipeline;
 };

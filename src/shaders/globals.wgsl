@@ -21,9 +21,9 @@ struct Particle
 
 struct GridNode
 {
-    vX: atomic<u32>,
-    vY: atomic<u32>,
-    mass: atomic<u32>,
+    vX: atomic<i32>,
+    vY: atomic<i32>,
+    mass: atomic<i32>,
 }
 
 // note: will save 2 decimal places

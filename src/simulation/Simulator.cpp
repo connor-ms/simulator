@@ -100,36 +100,28 @@ void Simulator::initPipeline()
 {
     std::cout << "initCompute" << std::endl;
 
-    // compute 1
+    wgpu::BindGroupLayout layouts[] = {
+        m_ctx->globalsBindGroupLayout,
+        m_bindGroupLayout,
+    };
+
+    wgpu::PipelineLayoutDescriptor plDesc{};
+    plDesc.bindGroupLayoutCount = 2;
+    plDesc.bindGroupLayouts = layouts;
+    m_computePipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
+
+    if (!m_computePipelineLayout)
+    {
+        std::runtime_error("Failed to create compute pipeline layout!");
+    }
+
+    // clear grid
     {
         wgpu::ShaderModule clearGrid = Util::loadShaderModule(SHADER_DIR "/clearGrid.wgsl", m_ctx->device);
 
         if (!clearGrid)
         {
-            std::cout << "ERROR: Failed to load clearGrid.wgsl!" << std::endl;
-            return;
-        }
-
-        if (!m_bindGroupLayout)
-        {
-            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
-            return;
-        }
-
-        wgpu::BindGroupLayout layouts[] = {
-            m_ctx->globalsBindGroupLayout,
-            m_bindGroupLayout,
-        };
-
-        wgpu::PipelineLayoutDescriptor plDesc{};
-        plDesc.bindGroupLayoutCount = 2;
-        plDesc.bindGroupLayouts = layouts;
-        m_computePipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
-
-        if (!m_computePipelineLayout)
-        {
-            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
-            return;
+            std::runtime_error("Failed to load clearGrid.wgsl!");
         }
 
         wgpu::ComputePipelineDescriptor cpDesc{};
@@ -138,56 +130,34 @@ void Simulator::initPipeline()
         cpDesc.compute.entryPoint = "clearGrid";
         cpDesc.label = "clearGrid";
 
-        m_computePipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
-        if (!m_computePipeline)
+        m_clearGridPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
+
+        if (!m_clearGridPipeline)
         {
-            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
+            std::runtime_error("Failed to create clearGrid pipeline!");
         }
     }
 
-    // compute 2
+    // particle to grid
     {
-        wgpu::ShaderModule computeShaderModule = Util::loadShaderModule(SHADER_DIR "/compute2.wgsl", m_ctx->device);
+        wgpu::ShaderModule p2g = Util::loadShaderModule(SHADER_DIR "/p2g.wgsl", m_ctx->device);
 
-        if (!computeShaderModule)
+        if (!p2g)
         {
-            std::cout << "ERROR: Failed to load compute.wgsl!" << std::endl;
-            return;
-        }
-
-        if (!m_bindGroupLayout)
-        {
-            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
-            return;
-        }
-
-        wgpu::BindGroupLayout layouts[] = {
-            m_ctx->globalsBindGroupLayout,
-            m_bindGroupLayout,
-        };
-
-        wgpu::PipelineLayoutDescriptor plDesc{};
-        plDesc.bindGroupLayoutCount = 2;
-        plDesc.bindGroupLayouts = layouts;
-        m_computePipelineLayout2 = m_ctx->device.CreatePipelineLayout(&plDesc);
-
-        if (!m_computePipelineLayout2)
-        {
-            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
-            return;
+            std::runtime_error("Failed to load p2g.wgsl!");
         }
 
         wgpu::ComputePipelineDescriptor cpDesc{};
-        cpDesc.layout = m_computePipelineLayout2;
-        cpDesc.compute.module = computeShaderModule;
-        cpDesc.compute.entryPoint = "computeSomething";
-        cpDesc.label = "Compute";
+        cpDesc.layout = m_computePipelineLayout;
+        cpDesc.compute.module = p2g;
+        cpDesc.compute.entryPoint = "p2g";
+        cpDesc.label = "p2g";
 
-        m_computePipeline2 = m_ctx->device.CreateComputePipeline(&cpDesc);
-        if (!m_computePipeline2)
+        m_p2gPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
+
+        if (!m_p2gPipeline)
         {
-            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
-            return;
+            std::runtime_error("Failed to create compute pipeline!");
         }
     }
 
@@ -196,26 +166,29 @@ void Simulator::initPipeline()
 
 void Simulator::onFrame(wgpu::CommandEncoder encoder)
 {
+    // Clear grid pass
     {
         wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_computePipeline);
+        computePass.SetPipeline(m_clearGridPipeline);
         computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 48;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_state.particles.size()) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+        uint32_t workgroupSize = 8;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
+        computePass.DispatchWorkgroups(workgroupCount, workgroupCount, 1);
 
         computePass.End();
     }
+
+    // Particle to grid pass
     {
         wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_computePipeline2);
+        computePass.SetPipeline(m_p2gPipeline);
         computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 48;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_state.particles.size()) + workgroupSize - 1) / workgroupSize;
+        uint32_t workgroupSize = 64;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
         computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
         computePass.End();

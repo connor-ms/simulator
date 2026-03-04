@@ -13,7 +13,7 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
     let p = particles[pid];
 
     // Convert particle position to grid space
-    let cell = p.position * globals.invDx;
+    let cell = p.position * globals.idX;
     let base = vec2<i32>(floor(cell - 0.5));
     let fx = cell - vec2<f32>(base);
 
@@ -42,10 +42,10 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
             let gridIndex = u32(gy) * globals.gridSize + u32(gx);
 
             // Atomic mass accumulation
-            atomicAdd(&grid[gridIndex].mass, toFixed(weight * p.mass));
+            atomicAdd(&grid[gridIndex].mass, toFixed(weight * 1));
 
             // Momentum contribution
-            let momentum = weight * p.mass * p.velocity;
+            let momentum = weight * 1 * p.velocity;
 
             atomicAdd(&grid[gridIndex].vX, toFixed(momentum.x));
             atomicAdd(&grid[gridIndex].vY, toFixed(momentum.y));
