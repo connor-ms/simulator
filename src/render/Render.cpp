@@ -255,7 +255,7 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
     pass.SetBindGroup(0, m_ctx->globalsBindGroup);
     pass.SetBindGroup(1, m_renderBindGroup);
     pass.SetVertexBuffer(0, m_vb);
-    pass.Draw(6, static_cast<uint32_t>(m_simState->particles.size() * sizeof(Particle)));
+    pass.Draw(6, static_cast<uint32_t>(m_simState->particles.size()));
 
     // Draw lines
     pass.SetPipeline(m_linePipeline);

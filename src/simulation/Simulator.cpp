@@ -101,49 +101,49 @@ void Simulator::initPipeline()
     std::cout << "initCompute" << std::endl;
 
     // compute 1
-    // {
-    //     wgpu::ShaderModule clearGrid = Util::loadShaderModule(SHADER_DIR "/clearGrid.wgsl", m_ctx->device);
+    {
+        wgpu::ShaderModule clearGrid = Util::loadShaderModule(SHADER_DIR "/clearGrid.wgsl", m_ctx->device);
 
-    //     if (!clearGrid)
-    //     {
-    //         std::cout << "ERROR: Failed to load clearGrid.wgsl!" << std::endl;
-    //         return;
-    //     }
+        if (!clearGrid)
+        {
+            std::cout << "ERROR: Failed to load clearGrid.wgsl!" << std::endl;
+            return;
+        }
 
-    //     if (!m_bindGroupLayout)
-    //     {
-    //         std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
-    //         return;
-    //     }
+        if (!m_bindGroupLayout)
+        {
+            std::cout << "ERROR: m_computeBindGroupLayout is null!" << std::endl;
+            return;
+        }
 
-    //     wgpu::BindGroupLayout layouts[] = {
-    //         m_ctx->globalsBindGroupLayout,
-    //         m_bindGroupLayout,
-    //     };
+        wgpu::BindGroupLayout layouts[] = {
+            m_ctx->globalsBindGroupLayout,
+            m_bindGroupLayout,
+        };
 
-    //     wgpu::PipelineLayoutDescriptor plDesc{};
-    //     plDesc.bindGroupLayoutCount = 2;
-    //     plDesc.bindGroupLayouts = layouts;
-    //     m_computePipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
+        wgpu::PipelineLayoutDescriptor plDesc{};
+        plDesc.bindGroupLayoutCount = 2;
+        plDesc.bindGroupLayouts = layouts;
+        m_computePipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
 
-    //     if (!m_computePipelineLayout)
-    //     {
-    //         std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
-    //         return;
-    //     }
+        if (!m_computePipelineLayout)
+        {
+            std::cout << "ERROR: Failed to create compute pipeline layout!" << std::endl;
+            return;
+        }
 
-    //     wgpu::ComputePipelineDescriptor cpDesc{};
-    //     cpDesc.layout = m_computePipelineLayout;
-    //     cpDesc.compute.module = clearGrid;
-    //     cpDesc.compute.entryPoint = "clearGrid";
-    //     cpDesc.label = "clearGrid";
+        wgpu::ComputePipelineDescriptor cpDesc{};
+        cpDesc.layout = m_computePipelineLayout;
+        cpDesc.compute.module = clearGrid;
+        cpDesc.compute.entryPoint = "clearGrid";
+        cpDesc.label = "clearGrid";
 
-    //     m_computePipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
-    //     if (!m_computePipeline)
-    //     {
-    //         std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
-    //     }
-    // }
+        m_computePipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
+        if (!m_computePipeline)
+        {
+            std::cout << "ERROR: Failed to create compute pipeline!" << std::endl;
+        }
+    }
 
     // compute 2
     {
@@ -196,18 +196,18 @@ void Simulator::initPipeline()
 
 void Simulator::onFrame(wgpu::CommandEncoder encoder)
 {
-    // {
-    //     wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-    //     computePass.SetPipeline(m_computePipeline);
-    //     computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
-    //     computePass.SetBindGroup(1, m_bindGroup);
+    {
+        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+        computePass.SetPipeline(m_computePipeline);
+        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+        computePass.SetBindGroup(1, m_bindGroup);
 
-    //     uint32_t workgroupSize = 48;
-    //     uint32_t workgroupCount = (static_cast<uint32_t>(m_state.particles.size()) + workgroupSize - 1) / workgroupSize;
-    //     computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+        uint32_t workgroupSize = 48;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_state.particles.size()) + workgroupSize - 1) / workgroupSize;
+        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-    //     computePass.End();
-    // }
+        computePass.End();
+    }
     {
         wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
         computePass.SetPipeline(m_computePipeline2);
