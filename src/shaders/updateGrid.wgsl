@@ -17,30 +17,19 @@ fn updateGrid(@builtin(global_invocation_id) id : vec3<u32>) {
     var vX = toFloat(atomicLoad(&grid[index].vX));
     var vY = toFloat(atomicLoad(&grid[index].vY));
 
-    //let velocity = vec2f(vX, vY);
- 
     if (mass > 0.0) {
-
-        // Normalize
         vX /= mass;
         vY /= mass;
 
-        // Gravity
-        vY -= 9.8 * globals.dt;
+        // Note to self: may have issues if a non-square world is used?
+        vY += globals.gravity * globals.dt * globals.idX;
 
-        // Boundaries
-        let boundary = 3u;
+        let boundary = 2u;
 
-        if (x < boundary && vX < 0.0) {
+        if (x < boundary || x > globals.gridSize - boundary) {
             vX = 0.0;
         }
-        if (x > globals.gridSize - boundary && vX > 0.0) {
-            vX = 0.0;
-        }
-        if (y < boundary && vY < 0.0) {
-            vY = 0.0;
-        }
-        if (y > globals.gridSize - boundary && vY > 0.0) {
+        if (y < boundary || y > globals.gridSize - boundary) {
             vY = 0.0;
         }
     }

@@ -8,10 +8,10 @@ std::vector<Particle> createParticleArray(int size, int xMax, int yMax, int offs
     std::mt19937 generator(rand());
     std::uniform_real_distribution<float> xDist(0 + offset, xMax - offset);
     std::uniform_real_distribution<float> yDist(0 + offset, yMax - offset);
-    std::uniform_real_distribution<float> vel(0, 1);
+    std::uniform_real_distribution<float> vel(0, 30);
 
     for (int i = 0; i < size; i++)
-        instances.push_back({{xDist(generator), yDist(generator)}, glm::vec2(0, 30), glm::f32mat2x2(0), float(0)});
+        instances.push_back({{xDist(generator), yDist(generator)}, glm::vec2(0, vel(generator)), glm::f32mat2x2(0), float(0)});
 
     return instances;
 }

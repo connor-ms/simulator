@@ -16,7 +16,8 @@ struct Globals
     glm::f32 dt;           // 112
     glm::f32 particleMass; // 116
     glm::u32 particleCount;
-    glm::vec2 _pad2;
+    glm::f32 gravity;
+    glm::f32 _pad2;
 };
 
 struct GPUContext

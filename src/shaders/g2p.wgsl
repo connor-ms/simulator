@@ -12,60 +12,55 @@ fn g2p(@builtin(global_invocation_id) id : vec3<u32>) {
 
     var p = particles[pid];
 
-    // Convert to grid space
-    let cell = p.position * globals.idX;
-    let base = vec2<f32>(floor(cell - 0.5));
-    let fx = cell - vec2<f32>(base);
+    let gridPos = p.position * globals.idX;
+    let base = vec2<i32>(gridPos);
+    let fx = gridPos - vec2<f32>(base) - vec2<f32>(0.5);
 
     // Quadratic B-spline weights
-    let w = array<vec2<f32>, 3>(
-        0.5 * pow(1.5 - fx, vec2<f32>(2.0)),
-        0.75 - pow(fx - 1.0, vec2<f32>(2.0)),
-        0.5 * pow(fx - 0.5, vec2<f32>(2.0))
-    );
+    var w: array<vec2<f32>, 3>;
+    w[0] = 0.5 * pow(vec2<f32>(0.5) - fx, vec2<f32>(2.0));
+    w[1] = vec2<f32>(0.75) - fx * fx;
+    w[2] = 0.5 * pow(vec2<f32>(0.5) + fx, vec2<f32>(2.0));
 
-    var newVelocity = vec2<f32>(0.0);
-    var newC = mat2x2<f32>(vec2<f32>(0.0), vec2<f32>(0.0));
+    p.velocity = vec2<f32>(0.0);
+    var B = mat2x2<f32>();
 
     // Interpolate from 3x3 neighbors
     for (var i = 0; i < 3; i++) {
         for (var j = 0; j < 3; j++) {
 
-            let gx = base.x + f32(i);
-            let gy = base.y + f32(j);
+            let cell = base + vec2<i32>(i - 1, j - 1);
 
-            if (gx < 0 || gy < 0 ||
-                gx >= f32(globals.gridSize) ||
-                gy >= f32(globals.gridSize)) {
+            if (cell.x < 0 || cell.y < 0 ||
+                cell.x >= i32(globals.gridSize) ||
+                cell.y >= i32(globals.gridSize)) {
                 continue;
             }
 
             let weight = w[i].x * w[j].y;
-            let index = u32(gy) * globals.gridSize + u32(gx);
+            let index = u32(cell.y) * globals.gridSize + u32(cell.x);
 
-            //let gridVel = grid[index].velocity;
             let gvX = toFloat(atomicLoad(&grid[index].vX));
             let gvY = toFloat(atomicLoad(&grid[index].vY));
-            let gridVel = vec2f(gvX, gvY);
+            let gridVel = vec2<f32>(gvX, gvY);
 
-            let dx = (vec2<f32>(gx, gy) + 0.5) * globals.dX - p.position;
+            let dist = (vec2<f32>(cell) - gridPos) + vec2<f32>(0.5);
 
-            newVelocity += weight * gridVel;
-
-            newC += 4.0 * globals.idX * weight * mat2x2<f32>(
-                gridVel.x * dx.x, gridVel.x * dx.y,
-                gridVel.y * dx.x, gridVel.y * dx.y
+            p.velocity += weight * gridVel;
+            
+            let term = mat2x2<f32>(
+                weight * gridVel * dist.x,
+                weight * gridVel * dist.y
             );
+
+            B += term;
         }
     }
 
-    // Update particle velocity
-    p.velocity = newVelocity;
-    p.C = newC;
-    p.J *= (1.0 + globals.dt * (p.C[0][0] + p.C[1][1]));
+    p.C = B * 4.0;
 
     // Advect particle
-    p.position += globals.dt * p.velocity;
+    p.position += globals.dt * p.velocity * globals.dX;
 
     p.position = clamp(
         p.position,

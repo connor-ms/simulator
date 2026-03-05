@@ -13,38 +13,38 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
     let p = particles[pid];
 
     // Convert particle position to grid space
-    let cell = p.position * globals.idX;// floor(p.position * globals.idX);
-    let base = vec2<f32>(floor(cell - 0.5));
-    let fx = cell - vec2<f32>(base);
+    let gridPos = p.position * globals.idX;
+    let base = vec2<i32>(gridPos);
+    let fx = gridPos - vec2<f32>(base) - vec2<f32>(0.5);
 
     // Quadratic B-spline weights
-    let w = array<vec2<f32>, 3>(
-        0.5 * pow(1.5 - fx, vec2<f32>(2.0)),
-        0.75 - pow(fx - 1.0, vec2<f32>(2.0)),
-        0.5 * pow(fx - 0.5, vec2<f32>(2.0))
-    );
+    var w: array<vec2<f32>, 3>;
+    w[0] = 0.5 * pow(vec2<f32>(0.5) - fx, vec2<f32>(2.0));
+    w[1] = vec2<f32>(0.75) - fx * fx;
+    w[2] = 0.5 * pow(vec2<f32>(0.5) + fx, vec2<f32>(2.0));
 
     // Loop over 3x3 neighboring grid nodes
     for (var i = 0; i < 3; i++) {
         for (var j = 0; j < 3; j++) {
 
             let weight = w[i].x * w[j].y;
+            let cell = base + vec2<i32>(i - 1, j - 1);
 
-            let gx = base.x + f32(i);
-            let gy = base.y + f32(j);
-
-            if (gx < 0 || gy < 0 ||
-                gx >= f32(globals.gridSize) ||
-                gy >= f32(globals.gridSize)) {
+            if (cell.x < 0 || cell.y < 0 ||
+                cell.x >= i32(globals.gridSize) ||
+                cell.y >= i32(globals.gridSize)) {
                 continue;
             }
 
-            let gridIndex = u32(gy) * globals.gridSize + u32(gx);
-            let dx = (vec2<f32>(gx, gy) + 0.5) * globals.dX - p.position;
+            let gridIndex = u32(cell.y) * globals.gridSize + u32(cell.x);
+            
+            let cellDist = (vec2<f32>(cell) - gridPos) + vec2<f32>(0.5);
+            let Q = p.C * cellDist;
 
-            let momentum = 1 * weight * (p.velocity + p.C * dx);
+            let massContrib = weight * 1;
+            let momentum = massContrib * (p.velocity + Q);
 
-            atomicAdd(&grid[gridIndex].mass, toFixed(weight * 1));
+            atomicAdd(&grid[gridIndex].mass, toFixed(massContrib));
             atomicAdd(&grid[gridIndex].vX, toFixed(momentum.x));
             atomicAdd(&grid[gridIndex].vY, toFixed(momentum.y));
         }

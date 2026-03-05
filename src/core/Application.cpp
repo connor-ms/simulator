@@ -153,6 +153,7 @@ void Application::initGlobals()
     m_ctx.globals.dt = .05;
     m_ctx.globals.particleMass = 1;
     m_ctx.globals.particleCount = 10000;
+    m_ctx.globals.gravity = -98;
 }
 
 void Application::initBindGroupLayout()

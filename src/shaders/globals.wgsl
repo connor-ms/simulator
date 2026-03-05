@@ -9,6 +9,7 @@ struct Globals
     dt: f32,
     particleMass: f32,
     particleCount: u32,
+    gravity: f32,
 };
 
 struct Particle
