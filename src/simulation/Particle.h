@@ -13,4 +13,8 @@ struct Particle
     float _pad;
 };
 
-std::vector<Particle> createParticleArray(int size, int xMax, int yMax, int offset = 0);
+std::vector<Particle> createParticleArray(
+    int size,
+    float xMax,
+    float yMax,
+    float offset);

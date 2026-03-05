@@ -7,7 +7,7 @@
 void Simulator::init(GPUContext *ctx)
 {
     m_ctx = ctx;
-    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 10);
+    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 100);
 
     initBindGroupLayouts();
     initBuffers();
@@ -159,6 +159,19 @@ void Simulator::initPipeline()
         {
             std::runtime_error("Failed to create p2g pipeline!");
         }
+
+        wgpu::ComputePipelineDescriptor cp2Desc{};
+        cp2Desc.layout = m_computePipelineLayout;
+        cp2Desc.compute.module = p2g;
+        cp2Desc.compute.entryPoint = "p2g_2";
+        cp2Desc.label = "p2g_2";
+
+        m_p2g2Pipeline = m_ctx->device.CreateComputePipeline(&cp2Desc);
+
+        if (!m_p2g2Pipeline)
+        {
+            std::runtime_error("Failed to create p2g pipeline!");
+        }
     }
 
     // update grid
@@ -226,10 +239,24 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
         computePass.End();
     }
 
-    // Particle to grid pass
+    // Particle to grid pass 1
     {
         wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
         computePass.SetPipeline(m_p2gPipeline);
+        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+        computePass.SetBindGroup(1, m_bindGroup);
+
+        uint32_t workgroupSize = 64;
+        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
+        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+
+        computePass.End();
+    }
+
+    // Particle to grid pass 2
+    {
+        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+        computePass.SetPipeline(m_p2g2Pipeline);
         computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 

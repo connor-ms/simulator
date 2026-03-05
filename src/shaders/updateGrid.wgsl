@@ -22,7 +22,7 @@ fn updateGrid(@builtin(global_invocation_id) id : vec3<u32>) {
         vY /= mass;
 
         // Note to self: may have issues if a non-square world is used?
-        vY += globals.gravity * globals.dt * globals.idX;
+        vY -= 10.0;// * globals.idX;
 
         let boundary = 2u;
 

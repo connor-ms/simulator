@@ -6,18 +6,22 @@
 
 struct Globals
 {
-    glm::vec2 windowSize;  // 0 + 2*4 = 8
-    glm::vec2 _pad;        // 8 + 2*4 = 16
-    glm::vec4 worldSize;   // 16 + 4*4 = 32
-    glm::mat4x4 proj;      // 32 + 4*4*4 = 96
-    glm::u32 gridSize;     // 96 + 4 = 100
-    glm::f32 dX;           // 104
-    glm::f32 idX;          // 108
-    glm::f32 dt;           // 112
-    glm::f32 particleMass; // 116
+    glm::vec2 windowSize; // 0 + 2*4 = 8
+    glm::vec2 _pad;       // 8 + 2*4 = 16
+    glm::vec4 worldSize;  // 16 + 4*4 = 32
+    glm::mat4x4 proj;     // 32 + 4*4*4 = 96
+    glm::u32 gridSize;    // 96 + 4 = 100
+    glm::f32 dX;          // 104
+    glm::f32 idX;         // 108
+    glm::f32 dt;          // 112
     glm::u32 particleCount;
     glm::f32 gravity;
+    glm::f32 rest_density;
+    glm::f32 dynamic_viscosity;
+    glm::f32 eos_stiffness;
+    glm::f32 eos_power;
     glm::f32 _pad2;
+    glm::f32 _pad3;
 };
 
 struct GPUContext

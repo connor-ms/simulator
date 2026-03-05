@@ -150,10 +150,14 @@ void Application::initGlobals()
     m_ctx.globals.gridSize = 128;
     m_ctx.globals.dX = m_ctx.globals.worldSize.x / m_ctx.globals.gridSize;
     m_ctx.globals.idX = 1 / m_ctx.globals.dX;
-    m_ctx.globals.dt = .05;
-    m_ctx.globals.particleMass = 1;
+    m_ctx.globals.dt = .001;
     m_ctx.globals.particleCount = 10000;
     m_ctx.globals.gravity = -98;
+
+    m_ctx.globals.rest_density = 0.6;
+    m_ctx.globals.dynamic_viscosity = 0.1;
+    m_ctx.globals.eos_power = 2.0;
+    m_ctx.globals.eos_stiffness = 1.0;
 }
 
 void Application::initBindGroupLayout()
