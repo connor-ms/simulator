@@ -88,19 +88,16 @@ fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
             let gridIndex = u32(cell.y) * globals.gridSize + u32(cell.x);
             let mass = toFloat(atomicLoad(&grid[gridIndex].mass));
 
-            density += mass * weight;
+            density += mass;
         }
     }
 
-    //density /= (globals.dX * globals.dX);
+    density /= (globals.dX * globals.dX);
 
-    //let volume = 1 / density;
-    let volume = clamp(1.0 / density, 0.0, 10.0);
+    let volume = 1 / density;
+    //let volume = clamp(1.0 / density, 0.0, 10.0);
 
-    let pressure = clamp(
-    globals.eos_stiffness * (pow(density / globals.rest_density, globals.eos_power) - 1.0),
-    -0.1, 100.0
-);
+    let pressure = max(0.0, globals.eos_stiffness * (pow(density / globals.rest_density, globals.eos_power) - 1.0));
 
     var stress = mat2x2<f32>(
         -pressure, 0.0,

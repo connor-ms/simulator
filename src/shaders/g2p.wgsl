@@ -54,12 +54,16 @@ fn g2p(@builtin(global_invocation_id) id : vec3<u32>) {
             //     weight * gridVel * dist.x,
             //     weight * gridVel * dist.y
             // );
-            B[0] += weight * gridVel * dist.x;
-            B[1] += weight * gridVel * dist.y;
+            // B[0] += weight * gridVel * dist.x;
+            // B[1] += weight * gridVel * dist.y;
+            B += mat2x2<f32>(
+                gridVel * dist.x,
+                gridVel * dist.y
+            ) * weight;
         }
     }
 
-    p.velocity = clamp(p.velocity, vec2<f32>(-500.0), vec2<f32>(500.0));
+    //p.velocity = clamp(p.velocity, vec2<f32>(-500.0), vec2<f32>(500.0));
 
     p.C = B * 4.0 * globals.idX * globals.idX;
 

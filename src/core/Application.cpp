@@ -154,10 +154,10 @@ void Application::initGlobals()
     m_ctx.globals.particleCount = 10000;
     m_ctx.globals.gravity = -98;
 
-    m_ctx.globals.rest_density = 0.6;
-    m_ctx.globals.dynamic_viscosity = 0.1;
-    m_ctx.globals.eos_power = 2.0;
-    m_ctx.globals.eos_stiffness = 1.0;
+    m_ctx.globals.rest_density = 1.0;
+    m_ctx.globals.dynamic_viscosity = 5.0;
+    m_ctx.globals.eos_power = 4.0;
+    m_ctx.globals.eos_stiffness = 5;
 }
 
 void Application::initBindGroupLayout()
