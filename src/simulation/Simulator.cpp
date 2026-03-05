@@ -232,9 +232,9 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
         computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 8;
+        uint32_t workgroupSize = 64;
         uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, workgroupCount, 1);
+        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
         computePass.End();
     }
@@ -274,9 +274,9 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
         computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
         computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 8;
+        uint32_t workgroupSize = 64;
         uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, workgroupCount, 1);
+        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
         computePass.End();
     }

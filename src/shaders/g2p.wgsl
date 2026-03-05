@@ -3,78 +3,69 @@
 @group(1) @binding(1) var<storage, read_write> grid: array<GridNode>;
 
 @compute @workgroup_size(64)
-fn g2p(@builtin(global_invocation_id) id : vec3<u32>) {
-    let pid = id.x;
+fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
+    if (id.x >= globals.particleCount) { return; }
 
-    if (pid >= globals.particleCount) {
-        return;
-    }
+    var p         = particles[id.x];
+    let gpos      = p.position * globals.idX;
+    let cell_idx  = floor(gpos);
+    let cell_diff = gpos - (cell_idx + 0.5);
 
-    var p = particles[pid];
-    p.velocity = vec2<f32>(0.0);
+    var w: array<vec2f, 3>;
+    w[0] = 0.5 * (0.5 - cell_diff) * (0.5 - cell_diff);
+    w[1] = 0.75 - cell_diff * cell_diff;
+    w[2] = 0.5 * (0.5 + cell_diff) * (0.5 + cell_diff);
 
-    let gridPos = p.position * globals.idX;
-    let base = vec2<i32>(floor(gridPos - vec2<f32>(0.5)));
-    let fx = gridPos - vec2<f32>(base) - vec2<f32>(0.5);
+    var new_v = vec2f(0.0);
+    var B     = mat2x2f(vec2f(0.0), vec2f(0.0));
 
-    // Quadratic B-spline weights
-    var w: array<vec2<f32>, 3>;
-    w[0] = 0.5 * pow(vec2<f32>(0.5) - fx, vec2<f32>(2.0));
-    w[1] = vec2<f32>(0.75) - fx * fx;
-    w[2] = 0.5 * pow(vec2<f32>(0.5) + fx, vec2<f32>(2.0));
+    for (var gx = 0; gx < 3; gx++) {
+        for (var gy = 0; gy < 3; gy++) {
+            let weight    = w[gx].x * w[gy].y;
+            let cell      = vec2f(
+                cell_idx.x + f32(gx) - 1.0,
+                cell_idx.y + f32(gy) - 1.0,
+            );
+            let cell_dist = (cell + 0.5) - gpos;
+            let ci        = i32(cell.x) * i32(globals.gridSize) + i32(cell.y);
 
-    var B = mat2x2<f32>();
+            // grid velocity is in grid-space; convert back to world-space (* dX)
+            let gv = vec2f(
+                toFloat(atomicLoad(&grid[ci].vX)),
+                toFloat(atomicLoad(&grid[ci].vY)),
+            ) * globals.dX;
 
-    // Interpolate from 3x3 neighbors
-    for (var i = 0; i < 3; i++) {
-        for (var j = 0; j < 3; j++) {
+            let wv = gv * weight;
+            new_v += wv;
 
-            let cell = base + vec2<i32>(i - 1, j - 1);
-
-            if (cell.x < 0 || cell.y < 0 ||
-                cell.x >= i32(globals.gridSize) ||
-                cell.y >= i32(globals.gridSize)) {
-                continue;
-            }
-
-            let weight = w[i].x * w[j].y;
-            let index = u32(cell.y) * globals.gridSize + u32(cell.x);
-
-            let gvX = toFloat(atomicLoad(&grid[index].vX));
-            let gvY = toFloat(atomicLoad(&grid[index].vY));
-            let gridVel = vec2<f32>(gvX, gvY);
-
-            let cell_world = (vec2<f32>(cell) + vec2<f32>(0.5)) * globals.dX;
-            let dist = cell_world - p.position;
-            //let dist = (vec2<f32>(cell) - gridPos) + vec2<f32>(0.5);
-
-            p.velocity += weight * gridVel;
-            
-            // B += mat2x2<f32>(
-            //     weight * gridVel * dist.x,
-            //     weight * gridVel * dist.y
-            // );
-            // B[0] += weight * gridVel * dist.x;
-            // B[1] += weight * gridVel * dist.y;
-            B += mat2x2<f32>(
-                gridVel * dist.x,
-                gridVel * dist.y
-            ) * weight;
+            // APIC affine matrix accumulation
+            B += mat2x2f(wv * cell_dist.x, wv * cell_dist.y);
         }
     }
 
-    //p.velocity = clamp(p.velocity, vec2<f32>(-500.0), vec2<f32>(500.0));
+    p.velocity       = new_v;
+    p.C       = B * 4.0;
+    p.J      *= (1.0 + globals.dt * (p.C[0][0] + p.C[1][1])); // trace(C) = div(v)
 
-    p.C = B * 4.0 * globals.idX * globals.idX;
+    // advect in world space
+    p.position += p.velocity * globals.dt;
 
-    // Advect particle
-    p.position += globals.dt * p.velocity;
+    // clamp to world bounds
+    let lo = vec2f(1.0)  * globals.dX;
+    let hi = globals.worldSize.xy - 2.0 * globals.dX;
+    p.position = clamp(p.position, lo, hi);
 
-    p.position = clamp(
-        p.position,
-        vec2<f32>(0.0),
-        vec2<f32>(globals.worldSize.x, globals.worldSize.y)
-    );
+    // soft wall repulsion (look-ahead)
+    let k            = 3.0;
+    let wall_stiffness = 0.3;
+    let x_n          = p.position + p.velocity * globals.dt * k;
+    let wall_min     = vec2f(3.0) * globals.dX;
+    let wall_max     = globals.worldSize.xy - 4.0 * globals.dX;
 
-    particles[pid] = p;
+    if (x_n.x < wall_min.x) { p.velocity.x += wall_stiffness * (wall_min.x - x_n.x); }
+    if (x_n.x > wall_max.x) { p.velocity.x += wall_stiffness * (wall_max.x - x_n.x); }
+    if (x_n.y < wall_min.y) { p.velocity.y += wall_stiffness * (wall_min.y - x_n.y); }
+    if (x_n.y > wall_max.y) { p.velocity.y += wall_stiffness * (wall_max.y - x_n.y); }
+
+    particles[id.x] = p;
 }

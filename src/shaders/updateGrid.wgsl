@@ -2,38 +2,32 @@
 @group(1) @binding(0) var<storage, read_write> particles: array<Particle>;
 @group(1) @binding(1) var<storage, read_write> grid: array<GridNode>;
 
-@compute @workgroup_size(8, 8)
-fn updateGrid(@builtin(global_invocation_id) id : vec3<u32>) {
-    let x = id.x;
-    let y = id.y;
+@compute @workgroup_size(64)
+fn updateGrid(@builtin(global_invocation_id) id: vec3<u32>) {
+    if (id.x >= arrayLength(&grid)) { return; }
 
-    if (x >= globals.gridSize || y >= globals.gridSize) {
-        return;
-    }
+    let m = atomicLoad(&grid[id.x].mass);
+    if (m <= 0) { return; }
 
-    let index = y * globals.gridSize + x;
+    var fv = vec2f(
+        toFloat(atomicLoad(&grid[id.x].vX)),
+        toFloat(atomicLoad(&grid[id.x].vY)),
+    );
+    fv /= toFloat(m);
 
-    let mass = toFloat(atomicLoad(&grid[index].mass));
-    var vX = toFloat(atomicLoad(&grid[index].vX));
-    var vY = toFloat(atomicLoad(&grid[index].vY));
+    // gravity in grid-space: g_grid = g_world * idX
+    fv.y += globals.gravity * globals.dt * globals.idX;
 
-    if (mass > 0.0) {
-        vX /= mass;
-        vY /= mass;
+    // grid cell coords from flat index
+    let gs = i32(globals.gridSize);
+    let cx = i32(id.x) / gs;
+    let cy = i32(id.x) % gs;
 
-        // Note to self: may have issues if a non-square world is used?
-        vY += globals.gravity * globals.dt;
+    // boundary: 2-cell border inside grid
+    let max_c = gs - 3;
+    if (cx < 2 || cx > max_c) { fv.x = 0.0; }
+    if (cy < 2 || cy > max_c) { fv.y = 0.0; }
 
-        let boundary = 2u;
-
-        if (x < boundary || x > globals.gridSize - boundary) {
-            vX = 0.0;
-        }
-        if (y < boundary || y > globals.gridSize - boundary) {
-            vY = 0.0;
-        }
-    }
-
-    atomicStore(&grid[index].vX, toFixed(vX));
-    atomicStore(&grid[index].vY, toFixed(vY));
+    atomicStore(&grid[id.x].vX, toFixed(fv.x));
+    atomicStore(&grid[id.x].vY, toFixed(fv.y));
 }
