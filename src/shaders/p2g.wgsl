@@ -13,8 +13,8 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
     let p = particles[pid];
 
     // Convert particle position to grid space
-    let cell = p.position * globals.idX;
-    let base = vec2<i32>(floor(cell - 0.5));
+    let cell = p.position * globals.idX;// floor(p.position * globals.idX);
+    let base = vec2<f32>(floor(cell - 0.5));
     let fx = cell - vec2<f32>(base);
 
     // Quadratic B-spline weights
@@ -30,23 +30,21 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
 
             let weight = w[i].x * w[j].y;
 
-            let gx = base.x + i;
-            let gy = base.y + j;
+            let gx = base.x + f32(i);
+            let gy = base.y + f32(j);
 
             if (gx < 0 || gy < 0 ||
-                gx >= i32(globals.gridSize) ||
-                gy >= i32(globals.gridSize)) {
+                gx >= f32(globals.gridSize) ||
+                gy >= f32(globals.gridSize)) {
                 continue;
             }
 
             let gridIndex = u32(gy) * globals.gridSize + u32(gx);
+            let dx = (vec2<f32>(gx, gy) + 0.5) * globals.dX - p.position;
 
-            // Atomic mass accumulation
+            let momentum = 1 * weight * (p.velocity + p.C * dx);
+
             atomicAdd(&grid[gridIndex].mass, toFixed(weight * 1));
-
-            // Momentum contribution
-            let momentum = weight * 1 * p.velocity;
-
             atomicAdd(&grid[gridIndex].vX, toFixed(momentum.x));
             atomicAdd(&grid[gridIndex].vY, toFixed(momentum.y));
         }

@@ -28,9 +28,11 @@ struct GridNode
 
 // note: will save 2 decimal places
 fn toFixed(value: f32) -> i32 {
-    return i32(value * 1e2);
+    return i32(value * 1e7);
+    //return i32(value);
 }
 
 fn toFloat(value: i32) -> f32 {
-    return f32(value) * 1e-2;
+    return f32(value) * 1e-7;
+    //return f32(value);
 }
