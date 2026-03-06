@@ -225,73 +225,76 @@ void Simulator::initPipeline()
 
 void Simulator::onFrame(wgpu::CommandEncoder encoder)
 {
-    // Clear grid pass
+    // for (int i = 0; i < 16; i++)
     {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_clearGridPipeline);
-        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
-        computePass.SetBindGroup(1, m_bindGroup);
+        // Clear grid pass
+        {
+            wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+            computePass.SetPipeline(m_clearGridPipeline);
+            computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+            computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 64;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+            uint32_t workgroupSize = 64;
+            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-        computePass.End();
-    }
+            computePass.End();
+        }
 
-    // Particle to grid pass 1
-    {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_p2gPipeline);
-        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
-        computePass.SetBindGroup(1, m_bindGroup);
+        // Particle to grid pass 1
+        {
+            wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+            computePass.SetPipeline(m_p2gPipeline);
+            computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+            computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 64;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+            uint32_t workgroupSize = 64;
+            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-        computePass.End();
-    }
+            computePass.End();
+        }
 
-    // Particle to grid pass 2
-    {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_p2g2Pipeline);
-        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
-        computePass.SetBindGroup(1, m_bindGroup);
+        // Particle to grid pass 2
+        {
+            wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+            computePass.SetPipeline(m_p2g2Pipeline);
+            computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+            computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 64;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+            uint32_t workgroupSize = 64;
+            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-        computePass.End();
-    }
+            computePass.End();
+        }
 
-    // Update grid pass
-    {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_updateGridPipeline);
-        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
-        computePass.SetBindGroup(1, m_bindGroup);
+        // Update grid pass
+        {
+            wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+            computePass.SetPipeline(m_updateGridPipeline);
+            computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+            computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 64;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+            uint32_t workgroupSize = 64;
+            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-        computePass.End();
-    }
+            computePass.End();
+        }
 
-    // Grid to particle pass
-    {
-        wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
-        computePass.SetPipeline(m_g2pPipeline);
-        computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
-        computePass.SetBindGroup(1, m_bindGroup);
+        // Grid to particle pass
+        {
+            wgpu::ComputePassEncoder computePass = encoder.BeginComputePass();
+            computePass.SetPipeline(m_g2pPipeline);
+            computePass.SetBindGroup(0, m_ctx->globalsBindGroup);
+            computePass.SetBindGroup(1, m_bindGroup);
 
-        uint32_t workgroupSize = 64;
-        uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
-        computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+            uint32_t workgroupSize = 64;
+            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.particleCount) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(workgroupCount, 1, 1);
 
-        computePass.End();
+            computePass.End();
+        }
     }
 }

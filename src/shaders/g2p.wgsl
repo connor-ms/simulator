@@ -6,9 +6,9 @@
 fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     if (id.x >= globals.particleCount) { return; }
 
-    var p         = particles[id.x];
-    let gpos      = p.position * globals.idX;
-    let cell_idx  = floor(gpos);
+    var p = particles[id.x];
+    let gpos = p.position * globals.idX;
+    let cell_idx = floor(gpos);
     let cell_diff = gpos - (cell_idx + 0.5);
 
     var w: array<vec2f, 3>;
@@ -16,39 +16,48 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     w[1] = 0.75 - cell_diff * cell_diff;
     w[2] = 0.5 * (0.5 + cell_diff) * (0.5 + cell_diff);
 
-    var new_v = vec2f(0.0);
-    var B     = mat2x2f(vec2f(0.0), vec2f(0.0));
+    p.velocity = vec2f(0.0);
+    var B = mat2x2f(vec2f(0.0), vec2f(0.0));
 
     for (var gx = 0; gx < 3; gx++) {
         for (var gy = 0; gy < 3; gy++) {
-            let weight    = w[gx].x * w[gy].y;
-            let cell      = vec2f(
+            let weight = w[gx].x * w[gy].y;
+
+            let cell = vec2f(
                 cell_idx.x + f32(gx) - 1.0,
                 cell_idx.y + f32(gy) - 1.0,
             );
-            let cell_dist = (cell + 0.5) - gpos;
-            let ci        = i32(cell.x) * i32(globals.gridSize) + i32(cell.y);
 
-            // grid velocity is in grid-space; convert back to world-space (* dX)
+            if (cell.x < 0.0 || cell.y < 0.0 ||
+                cell.x >= f32(globals.gridSize) ||
+                cell.y >= f32(globals.gridSize)) {
+                continue;
+            }
+
+            let cell_dist = (cell + 0.5) - gpos;
+            let ci = i32(cell.y) * i32(globals.gridSize) + i32(cell.x);
+
+            // convert back to world space velocity
             let gv = vec2f(
                 toFloat(atomicLoad(&grid[ci].vX)),
                 toFloat(atomicLoad(&grid[ci].vY)),
             ) * globals.dX;
 
             let wv = gv * weight;
-            new_v += wv;
+            p.velocity += wv;
 
             // APIC affine matrix accumulation
             B += mat2x2f(wv * cell_dist.x, wv * cell_dist.y);
         }
     }
 
-    p.velocity       = new_v;
-    p.C       = B * 4.0;
-    p.J      *= (1.0 + globals.dt * (p.C[0][0] + p.C[1][1])); // trace(C) = div(v)
+    p.C = B * 4.0;
+    //p.J *= (1.0 + globals.dt * (p.C[0][0] + p.C[1][1])); // trace(C) = div(v)
 
     // advect in world space
     p.position += p.velocity * globals.dt;
+    p.debug1 = p.velocity.x;
+    p.debug2 = p.velocity.y;
 
     // clamp to world bounds
     let lo = vec2f(1.0)  * globals.dX;

@@ -9,8 +9,8 @@ struct Particle
     glm::vec2 position;
     glm::vec2 velocity;
     glm::f32mat2x2 C;
-    float J;
-    float _pad;
+    float debug1;
+    float debug2;
 };
 
 std::vector<Particle> createParticleArray(

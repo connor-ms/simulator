@@ -147,17 +147,17 @@ void Application::initGlobals()
         halfHeight,
         -1.f, 1.f);
 
-    m_ctx.globals.gridSize = 128;
+    m_ctx.globals.gridSize = 999;
     m_ctx.globals.dX = m_ctx.globals.worldSize.x / m_ctx.globals.gridSize;
     m_ctx.globals.idX = 1 / m_ctx.globals.dX;
     m_ctx.globals.dt = .001;
     m_ctx.globals.particleCount = 10000;
     m_ctx.globals.gravity = -98;
 
-    m_ctx.globals.rest_density = 1.0;
-    m_ctx.globals.dynamic_viscosity = 5.0;
+    m_ctx.globals.rest_density = 4.0;
+    m_ctx.globals.dynamic_viscosity = 0.1;
     m_ctx.globals.eos_power = 4.0;
-    m_ctx.globals.eos_stiffness = 5;
+    m_ctx.globals.eos_stiffness = 10.0;
 }
 
 void Application::initBindGroupLayout()
