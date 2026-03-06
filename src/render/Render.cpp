@@ -41,11 +41,11 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     m_simState = simState;
 
     // top & bottom world bounds
-    lines.push_back(Line{.p1 = glm::vec3(0, m_ctx->globals.worldSize.y, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, 0, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(0, m_ctx->globals.worldSize.y, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = .002f});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, 0, 0), .thickness = .002f});
     // left & right world bounds
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
-    lines.push_back(Line{.p1 = glm::vec3(m_ctx->globals.worldSize.x, 0, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = 1.f});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, m_ctx->globals.worldSize.y, 0), .thickness = .002f});
+    lines.push_back(Line{.p1 = glm::vec3(m_ctx->globals.worldSize.x, 0, 0), .p2 = glm::vec3(m_ctx->globals.worldSize.x, m_ctx->globals.worldSize.y, 0), .thickness = .002f});
 
     initBindGroupLayouts();
     initBuffers();

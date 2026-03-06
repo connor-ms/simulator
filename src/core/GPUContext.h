@@ -6,14 +6,14 @@
 
 struct Globals
 {
-    glm::vec2 windowSize; // 0 + 2*4 = 8
-    glm::vec2 _pad;       // 8 + 2*4 = 16
-    glm::vec4 worldSize;  // 16 + 4*4 = 32
-    glm::mat4x4 proj;     // 32 + 4*4*4 = 96
-    glm::u32 gridSize;    // 96 + 4 = 100
-    glm::f32 dX;          // 104
-    glm::f32 idX;         // 108
-    glm::f32 dt;          // 112
+    glm::vec2 windowSize;
+    glm::vec2 _pad;
+    glm::vec4 worldSize;
+    glm::mat4x4 proj;
+    glm::u32 gridSize;
+    glm::f32 dX;
+    glm::f32 idX;
+    glm::f32 dt;
     glm::u32 particleCount;
     glm::f32 gravity;
     glm::f32 rest_density;

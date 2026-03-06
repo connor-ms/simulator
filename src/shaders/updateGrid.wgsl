@@ -2,7 +2,7 @@
 @group(1) @binding(0) var<storage, read_write> particles: array<Particle>;
 @group(1) @binding(1) var<storage, read_write> grid: array<GridNode>;
 
-@compute @workgroup_size(64)
+@compute @workgroup_size(8, 8)
 fn updateGrid(@builtin(global_invocation_id) id: vec3<u32>) {
     if (id.x >= arrayLength(&grid)) { return; }
 
@@ -17,12 +17,12 @@ fn updateGrid(@builtin(global_invocation_id) id: vec3<u32>) {
     fv /= m;
 
     // gravity in grid-space: g_grid = g_world * idX
-    fv.y += globals.gravity * globals.dt * globals.idX;
+    fv.y += globals.gravity * globals.dt;
 
     // grid cell coords from flat index
     let gs = i32(globals.gridSize);
-    let cx = i32(id.x) % gs;
-    let cy = i32(id.x) / gs;
+    let cx = i32(id.x) / gs;
+    let cy = i32(id.x) % gs;
 
     // boundary: 2-cell border inside grid
     let max_c = gs - 3;

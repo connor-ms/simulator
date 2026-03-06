@@ -36,7 +36,9 @@ fn vs_main(@location(0) pos : vec2<f32>,
     let along = dir * (t * length);
     let offset = perp * (pos.y * line.thickness);
 
-    let worldPos = (p1 + along + offset) - (globals.worldSize * 0.5);
+    let worldSize = vec3<f32>(globals.worldSize.x, globals.worldSize.y, globals.worldSize.z);
+
+    let worldPos = (p1 + along + offset) - (worldSize * 0.5);
 
     out.position = globals.proj * vec4<f32>(worldPos, 1.0);
     out.uv = uv;
