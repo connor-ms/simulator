@@ -1,3 +1,10 @@
+/*
+ * This file is included by default when loading a shader
+ * via Util::loadShaderModule(). This prevents the need to
+ * redefine these structs in each file, at the expense
+ * of syntax highlighting not working.
+ */
+
 struct Globals
 {
     windowSize: vec2<f32>,

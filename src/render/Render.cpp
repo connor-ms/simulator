@@ -82,10 +82,7 @@ void Renderer::initBuffers()
     m_ctx->device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
 
     if (m_vb == nullptr)
-    {
-        std::cout << "ERROR: Failed to initialize quad vertex buffer." << std::endl;
-        return;
-    }
+        std::runtime_error("Failed to initialize quad vertex buffer.");
 
     // Line buffer
     wgpu::BufferDescriptor nDesc{};
@@ -97,10 +94,7 @@ void Renderer::initBuffers()
     m_ctx->device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
 
     if (m_lineBuffer == nullptr)
-    {
-        std::cout << "ERROR: Failed to initialize line buffer." << std::endl;
-        return;
-    }
+        std::runtime_error("ERROR: Failed to initialize line buffer.");
 }
 
 void Renderer::initBindGroups()
@@ -146,11 +140,6 @@ void Renderer::initPipeline()
 
     wgpu::ShaderModule particleShader = Util::loadShaderModule(SHADER_DIR "/particle.wgsl", m_ctx->device);
     wgpu::ShaderModule lineShader = Util::loadShaderModule(SHADER_DIR "/line.wgsl", m_ctx->device);
-    if (!particleShader || !lineShader)
-    {
-        std::cout << "ERROR: Failed to load render shaders!" << std::endl;
-        return;
-    }
 
     wgpu::VertexAttribute attrs[2];
 
@@ -227,10 +216,8 @@ void Renderer::initPipeline()
     }
 
     if (!m_linePipeline)
-    {
-        std::cout << "ERROR: Failed to create render pipeline!" << std::endl;
-        return;
-    }
+        std::runtime_error("ERROR: Failed to create render pipeline!");
+
     std::cout << "Render pipeline created" << std::endl;
 }
 

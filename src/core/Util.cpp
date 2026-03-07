@@ -40,5 +40,10 @@ wgpu::ShaderModule Util::loadShaderModule(const std::filesystem::path &path, wgp
     wgpu::ShaderSourceWGSL wgsl{{.code = fullSource.c_str()}};
     wgpu::ShaderModuleDescriptor shaderModuleDescriptor{.nextInChain = &wgsl};
 
-    return device.CreateShaderModule(&shaderModuleDescriptor);
+    wgpu::ShaderModule shader = device.CreateShaderModule(&shaderModuleDescriptor);
+
+    if (!shader)
+        std::runtime_error("Failed to load " + path.string());
+
+    return shader;
 }

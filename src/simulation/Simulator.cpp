@@ -33,7 +33,7 @@ void Simulator::initBindGroupLayouts()
     m_bindGroupLayout = m_ctx->device.CreateBindGroupLayout(&computeDesc);
 
     if (!m_bindGroupLayout)
-        std::cout << "ERROR: Failed to create compute bind group layout!" << std::endl;
+        std::runtime_error("Failed to create compute bind group layout!");
 }
 
 void Simulator::initBuffers()
@@ -49,9 +49,7 @@ void Simulator::initBuffers()
         m_ctx->device.GetQueue().WriteBuffer(m_state.particleBuffer, 0, m_state.particles.data(), m_state.particles.size() * sizeof(Particle));
 
         if (m_state.particleBuffer == nullptr)
-        {
-            std::cout << "ERROR: Failed to initialize particle buffer." << std::endl;
-        }
+            std::runtime_error("Failed to initialize particle buffer!");
     }
 
     // GridNode buffer
@@ -64,9 +62,7 @@ void Simulator::initBuffers()
         m_state.gridBuffer = m_ctx->device.CreateBuffer(&desc);
 
         if (m_state.gridBuffer == nullptr)
-        {
             std::cout << "ERROR: Failed to initialize grid buffer." << std::endl;
-        }
     }
 }
 
@@ -111,18 +107,11 @@ void Simulator::initPipeline()
     m_computePipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
 
     if (!m_computePipelineLayout)
-    {
         std::runtime_error("Failed to create compute pipeline layout!");
-    }
 
     // clear grid
     {
-        wgpu::ShaderModule clearGrid = Util::loadShaderModule(SHADER_DIR "/clearGrid.wgsl", m_ctx->device);
-
-        if (!clearGrid)
-        {
-            std::runtime_error("Failed to load clearGrid.wgsl!");
-        }
+        wgpu::ShaderModule clearGrid = Util::loadShaderModule(SHADER_DIR "/compute/clearGrid.wgsl", m_ctx->device);
 
         wgpu::ComputePipelineDescriptor cpDesc{};
         cpDesc.layout = m_computePipelineLayout;
@@ -133,20 +122,14 @@ void Simulator::initPipeline()
         m_clearGridPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
 
         if (!m_clearGridPipeline)
-        {
             std::runtime_error("Failed to create clearGrid pipeline!");
-        }
     }
 
     // particle to grid
     {
-        wgpu::ShaderModule p2g = Util::loadShaderModule(SHADER_DIR "/p2g.wgsl", m_ctx->device);
+        wgpu::ShaderModule p2g = Util::loadShaderModule(SHADER_DIR "/compute/p2g.wgsl", m_ctx->device);
 
-        if (!p2g)
-        {
-            std::runtime_error("Failed to load p2g.wgsl!");
-        }
-
+        // step 1
         wgpu::ComputePipelineDescriptor cpDesc{};
         cpDesc.layout = m_computePipelineLayout;
         cpDesc.compute.module = p2g;
@@ -156,10 +139,9 @@ void Simulator::initPipeline()
         m_p2gPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
 
         if (!m_p2gPipeline)
-        {
             std::runtime_error("Failed to create p2g pipeline!");
-        }
 
+        // step 2
         wgpu::ComputePipelineDescriptor cp2Desc{};
         cp2Desc.layout = m_computePipelineLayout;
         cp2Desc.compute.module = p2g;
@@ -169,19 +151,12 @@ void Simulator::initPipeline()
         m_p2g2Pipeline = m_ctx->device.CreateComputePipeline(&cp2Desc);
 
         if (!m_p2g2Pipeline)
-        {
-            std::runtime_error("Failed to create p2g pipeline!");
-        }
+            std::runtime_error("Failed to create p2g2 pipeline!");
     }
 
     // update grid
     {
-        wgpu::ShaderModule updateGrid = Util::loadShaderModule(SHADER_DIR "/updateGrid.wgsl", m_ctx->device);
-
-        if (!updateGrid)
-        {
-            std::runtime_error("Failed to load updateGrid.wgsl!");
-        }
+        wgpu::ShaderModule updateGrid = Util::loadShaderModule(SHADER_DIR "/compute/updateGrid.wgsl", m_ctx->device);
 
         wgpu::ComputePipelineDescriptor cpDesc{};
         cpDesc.layout = m_computePipelineLayout;
@@ -192,19 +167,12 @@ void Simulator::initPipeline()
         m_updateGridPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
 
         if (!m_updateGridPipeline)
-        {
             std::runtime_error("Failed to create updateGrid pipeline!");
-        }
     }
 
     // g2p
     {
-        wgpu::ShaderModule g2p = Util::loadShaderModule(SHADER_DIR "/g2p.wgsl", m_ctx->device);
-
-        if (!g2p)
-        {
-            std::runtime_error("Failed to load updateGrid.wgsl!");
-        }
+        wgpu::ShaderModule g2p = Util::loadShaderModule(SHADER_DIR "/compute/g2p.wgsl", m_ctx->device);
 
         wgpu::ComputePipelineDescriptor cpDesc{};
         cpDesc.layout = m_computePipelineLayout;
@@ -215,9 +183,7 @@ void Simulator::initPipeline()
         m_g2pPipeline = m_ctx->device.CreateComputePipeline(&cpDesc);
 
         if (!m_g2pPipeline)
-        {
             std::runtime_error("Failed to create updateGrid pipeline!");
-        }
     }
 
     std::cout << "initCompute Done" << std::endl;

@@ -176,9 +176,7 @@ void Application::initBindGroupLayout()
     m_ctx.globalsBindGroupLayout = m_ctx.device.CreateBindGroupLayout(&globalDesc);
 
     if (!m_ctx.globalsBindGroupLayout)
-    {
         std::runtime_error("Failed to create global bind group layout!");
-    }
 
     std::cout << "initBindGroupLayout Done" << std::endl;
 }
@@ -196,9 +194,7 @@ void Application::initBuffers()
     m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 
     if (m_ctx.globalsBuffer == nullptr)
-    {
         std::runtime_error("Failed to initialize global buffer!");
-    }
 }
 
 void Application::initBindGroup()
@@ -219,7 +215,7 @@ void Application::initBindGroup()
     m_ctx.globalsBindGroup = m_ctx.device.CreateBindGroup(&globalDesc);
 
     if (!m_ctx.globalsBindGroup)
-        std::cout << "ERROR: Failed to create global bind group!" << std::endl;
+        std::runtime_error("Failed to create global bind group!");
 
     std::cout << "initBindGroup Done" << std::endl;
 }
