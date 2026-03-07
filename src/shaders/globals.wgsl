@@ -32,13 +32,10 @@ struct GridNode
     mass: atomic<i32>,
 }
 
-// note: will save 2 decimal places
 fn toFixed(value: f32) -> i32 {
-    return i32(value * 1e8);
-    //return i32(value);
+    return i32(value * 1e7);
 }
 
 fn toFloat(value: i32) -> f32 {
-    return f32(value) * 1e-8;
-    //return f32(value);
+    return f32(value) * 1e-7;
 }

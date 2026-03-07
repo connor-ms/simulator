@@ -150,8 +150,8 @@ void Application::initGlobals()
     m_ctx.globals.gridSize = 64;
     m_ctx.globals.dX = 1;
     m_ctx.globals.idX = 1 / m_ctx.globals.dX;
-    m_ctx.globals.dt = 0.2f;
-    m_ctx.globals.particleCount = 1000;
+    m_ctx.globals.dt = 0.1f;
+    m_ctx.globals.particleCount = 10000;
     m_ctx.globals.gravity = -0.3f;
 
     m_ctx.globals.rest_density = 4.0f;
