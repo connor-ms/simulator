@@ -54,7 +54,6 @@ fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
     w[1] = 0.75 - cell_diff * cell_diff;
     w[2] = 0.5 * (0.5 + cell_diff) * (0.5 + cell_diff);
 
-    // --- density estimate from grid mass ---
     var density = 0.0;
     for (var gx = 0; gx < 3; gx++) {
         for (var gy = 0; gy < 3; gy++) {

@@ -18,10 +18,8 @@ fn updateGrid(@builtin(global_invocation_id) id: vec3<u32>) {
     
     fv /= m;
 
-    // gravity in grid-space: g_grid = g_world * idX
     fv.y += (globals.gravity * globals.dt);
 
-    // boundary: 2-cell border inside grid
     let max_c = i32(globals.gridSize) - 3;
     if (i32(id.x) < 2 || i32(id.x) > max_c) { fv.x = 0.0; }
     if (i32(id.y) < 2 || i32(id.y) > max_c) { fv.y = 0.0; }

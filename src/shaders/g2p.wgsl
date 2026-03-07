@@ -31,7 +31,6 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
             let cell_dist = (cell - p.position) + 0.5;
             let ci = i32(cell.x) * i32(globals.gridSize) + i32(cell.y);
 
-            // convert back to world space velocity
             let gv = vec2f(
                 toFloat(atomicLoad(&grid[ci].vX)),
                 toFloat(atomicLoad(&grid[ci].vY)),
@@ -40,16 +39,12 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
             let wv = gv * weight;
             p.velocity += wv;
 
-            // APIC affine matrix accumulation
             B += mat2x2f(wv * cell_dist.x, wv * cell_dist.y);
         }
     }
 
     p.C = B * 4.0;
-    //p.J *= (1.0 + globals.dt * (p.C[0][0] + p.C[1][1])); // trace(C) = div(v)
 
-    //p.velocity = vec2f(0, -0.03);
-    // advect in world space
     p.position += p.velocity * globals.dt;
     p.debug1 = p.velocity.x;
     p.debug2 = p.velocity.y;
@@ -59,7 +54,6 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     let hi = globals.worldSize.xy - 2.0 * globals.dX;
     p.position = clamp(p.position, lo, hi);
 
-    // soft wall repulsion (look-ahead)
     // let k            = 3.0;
     // let wall_stiffness = 0.3;
     // let x_n          = p.position + p.velocity * globals.dt * k;

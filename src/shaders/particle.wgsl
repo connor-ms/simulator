@@ -43,12 +43,10 @@ fn fs_main(@location(0) uv : vec2<f32>,
     let velocity = vec2f(debug1, debug2);
 
     let speed = length(velocity);
-    let maxSpeed = 100.0; // tune to your simulation
+    let maxSpeed = 100.0;
     let t = clamp(speed / maxSpeed, 0.0, 1.0);
 
-    // direction-based color from velocity
-    let velDir = normalize(velocity) * 0.5 + 0.5; // remap -1..1 to 0..1
-    //out.color = vec4<f32>();
+    let velDir = normalize(velocity) * 0.5 + 0.5;
 
     //return vec4<f32>(velDir.x, velDir.y, t, 1.0);
     return vec4<f32>(1, 0, 0, 1.0);

@@ -1,15 +1,10 @@
 #include "Particle.h"
 
-std::vector<Particle> createParticleArray(
-    int size,
-    float xMax,   // should be 1.0
-    float yMax,   // should be 1.0
-    float offset) // something like 0.05
+std::vector<Particle> createParticleArray(int size, float xMax, float yMax, float offset)
 {
     std::vector<Particle> instances;
     instances.reserve(size);
 
-    // Make grid roughly square
     int countX = static_cast<int>(std::ceil(std::sqrt(size)));
     int countY = static_cast<int>(std::ceil(float(size) / countX));
 
@@ -32,7 +27,6 @@ std::vector<Particle> createParticleArray(
             p.position = {x, y};
             p.velocity = {0.0f, 0.0f};
             p.C = glm::f32mat2x2(0.0f);
-            // p.mass = 1.0f;
 
             instances.push_back(p);
             created++;

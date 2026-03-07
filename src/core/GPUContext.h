@@ -33,7 +33,6 @@ struct GPUContext
     wgpu::TextureFormat format;
 
     wgpu::Buffer globalsBuffer;
-    // wgpu::Buffer m_gridBuffer;
 
     wgpu::BindGroupLayout globalsBindGroupLayout;
     wgpu::BindGroup globalsBindGroup;
