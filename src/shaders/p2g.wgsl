@@ -20,10 +20,10 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
         for (var gy = 0; gy < 3; gy++) {
             let weight = w[gx].x * w[gy].y;
 
-            let cell = vec2f(
+            let cell = floor(vec2f(
                 cell_idx.x + f32(gx) - 1.0,
                 cell_idx.y + f32(gy) - 1.0,
-            );
+            ));
             let cell_dist  = (cell - p.position) + 0.5;
             let Q          = p.C * cell_dist;
 
@@ -59,10 +59,10 @@ fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
     for (var gx = 0; gx < 3; gx++) {
         for (var gy = 0; gy < 3; gy++) {
             let weight = w[gx].x * w[gy].y;
-            let cell   = vec2f(
+            let cell   = floor(vec2f(
                 cell_idx.x + f32(gx) - 1.0,
                 cell_idx.y + f32(gy) - 1.0,
-            );
+            ));
             
             let ci   = i32(cell.x) * i32(globals.gridSize) + i32(cell.y);
             density += toFloat(atomicLoad(&grid[ci].mass)) * weight;

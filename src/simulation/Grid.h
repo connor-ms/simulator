@@ -4,7 +4,7 @@
 
 struct GridNode
 {
-    uint32_t vX;
-    uint32_t vY;
-    uint32_t mass;
+    int32_t vX;
+    int32_t vY;
+    int32_t mass;
 };

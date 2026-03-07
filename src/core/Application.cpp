@@ -134,30 +134,30 @@ void Application::initGlobals()
 
     m_ctx.globals = Globals{
         .windowSize = glm::vec2(fbWidth, fbHeight),
-        .worldSize = glm::vec4(64, 64, 0, 0),
+        .worldSize = glm::vec4(100, 100, 0, 0),
     };
 
     float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
     float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
 
     m_ctx.globals.proj = glm::ortho(
-        -32.f,
-        32.f,
-        -32.f,
-        32.f,
+        -50.f,
+        50.f,
+        -50.f,
+        50.f,
         -1.f, 1.f);
 
     m_ctx.globals.gridSize = 64;
     m_ctx.globals.dX = 1;
     m_ctx.globals.idX = 1 / m_ctx.globals.dX;
-    m_ctx.globals.dt = 0.01f;
+    m_ctx.globals.dt = 0.2f;
     m_ctx.globals.particleCount = 1000;
-    m_ctx.globals.gravity = -.05f;
+    m_ctx.globals.gravity = -0.3f;
 
     m_ctx.globals.rest_density = 4.0f;
     m_ctx.globals.dynamic_viscosity = 0.1f;
-    m_ctx.globals.eos_power = 4.0;
-    m_ctx.globals.eos_stiffness = 3.0;
+    m_ctx.globals.eos_power = 4.0f;
+    m_ctx.globals.eos_stiffness = 10.0f;
 }
 
 void Application::initBindGroupLayout()
