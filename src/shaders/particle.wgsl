@@ -15,10 +15,10 @@ fn vs_main(@location(0) pos : vec2<f32>,
            @builtin(instance_index) instanceIndex: u32) -> VertexOut
 {
     var out: VertexOut;
-    let radius = vec2<f32>(0.5, 0.5);
+    let radius = vec2<f32>(2, 2);
 
     let particle = particles[instanceIndex];
-    let worldPos = (particle.position + pos * radius) - (vec2f(globals.worldSize.x, globals.worldSize.y) * 0.5);
+    let worldPos = (particle.position + pos * radius) - (vec2f(f32(globals.gridSize), f32(globals.gridSize)) * 0.5);
 
     out.position = globals.proj * vec4<f32>(worldPos, 0.0, 1.0);
     out.uv = uv;
@@ -40,14 +40,21 @@ fn fs_main(@location(0) uv : vec2<f32>,
         discard;
     }
 
-    let velocity = vec2f(debug1, debug2);
+    // let velocity = vec2f(debug1, debug2);
 
-    let speed = length(velocity);
-    let maxSpeed = 100.0;
-    let t = clamp(speed / maxSpeed, 0.0, 1.0);
+    // let speed = length(velocity);
+    // let maxSpeed = 50.0;
+    // let t = clamp(speed / maxSpeed, 0.0, 1.0);
 
-    let velDir = normalize(velocity) * 0.5 + 0.5;
+    // let velDir = normalize(velocity) * 0.5 + 0.5;
 
     //return vec4<f32>(velDir.x, velDir.y, t, 1.0);
-    return vec4<f32>(1, 0, 0, 1.0);
+
+    let pressure = debug1;
+    let volume = debug2;
+
+    let maxPressure = 50.0;
+    let t = clamp(pressure / maxPressure, 0.0, 1.0);
+
+    return vec4<f32>(t, t,1, 1.0);
 }

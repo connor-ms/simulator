@@ -36,7 +36,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
     let along = dir * (t * length);
     let offset = perp * (pos.y * line.thickness);
 
-    let worldSize = vec3<f32>(globals.worldSize.x, globals.worldSize.y, globals.worldSize.z);
+    let worldSize = vec3<f32>(f32(globals.gridSize), f32(globals.gridSize), f32(globals.gridSize));
 
     let worldPos = (p1 + along + offset) - (worldSize * 0.5);
 

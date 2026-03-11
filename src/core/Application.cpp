@@ -18,6 +18,41 @@ void Application::init()
     m_gui.init(&m_ctx, m_window);
 }
 
+void Application::initGlobals()
+{
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+
+    m_ctx.globals = Globals{
+        .windowSize = glm::vec2(fbWidth, fbHeight),
+        .worldSize = glm::vec4(64, 64, 0, 0),
+    };
+
+    int gridSize = 150;
+
+    float halfWidth = gridSize * 0.5f;
+    float halfHeight = gridSize * 0.5f;
+
+    m_ctx.globals.proj = glm::ortho(
+        -halfWidth,
+        halfWidth,
+        -halfHeight,
+        halfHeight,
+        -1.f, 1.f);
+
+    m_ctx.globals.gridSize = gridSize;
+    m_ctx.globals.dX = 1;
+    m_ctx.globals.idX = 1 / m_ctx.globals.dX;
+    m_ctx.globals.dt = 0.05f;
+    m_ctx.globals.particleCount = 30000;
+    m_ctx.globals.gravity = -0.4f;
+
+    m_ctx.globals.rest_density = 4.0f;
+    m_ctx.globals.dynamic_viscosity = 0.1f;
+    m_ctx.globals.eos_power = 4.0f;
+    m_ctx.globals.eos_stiffness = 10.0f;
+}
+
 void Application::initWindow()
 {
     if (!glfwInit())
@@ -125,39 +160,6 @@ void Application::initSurface()
     wgpu::SurfaceConfiguration config{.device = m_ctx.device, .format = m_ctx.format, .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height)};
     m_ctx.surface.Configure(&config);
     std::cout << "Surface created!" << std::endl;
-}
-
-void Application::initGlobals()
-{
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
-
-    m_ctx.globals = Globals{
-        .windowSize = glm::vec2(fbWidth, fbHeight),
-        .worldSize = glm::vec4(100, 100, 0, 0),
-    };
-
-    float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
-    float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
-
-    m_ctx.globals.proj = glm::ortho(
-        -50.f,
-        50.f,
-        -50.f,
-        50.f,
-        -1.f, 1.f);
-
-    m_ctx.globals.gridSize = 64;
-    m_ctx.globals.dX = 1;
-    m_ctx.globals.idX = 1 / m_ctx.globals.dX;
-    m_ctx.globals.dt = 0.1f;
-    m_ctx.globals.particleCount = 10000;
-    m_ctx.globals.gravity = -0.3f;
-
-    m_ctx.globals.rest_density = 4.0f;
-    m_ctx.globals.dynamic_viscosity = 0.1f;
-    m_ctx.globals.eos_power = 4.0f;
-    m_ctx.globals.eos_stiffness = 10.0f;
 }
 
 void Application::initBindGroupLayout()

@@ -44,7 +44,7 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
 fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
     if (id.x >= globals.particleCount) { return; }
 
-    let p = particles[id.x];
+    var p = particles[id.x];
     
     let cell_idx = floor(p.position);
     let cell_diff = (p.position - cell_idx) - 0.5;
@@ -104,4 +104,11 @@ fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
             atomicAdd(&grid[ci].vY, toFixed(momentum.y));
         }
     }
+
+    // p.debug1 = toFloat(atomicLoad(&grid[floor(p.position)].vX));
+    // p.debug2 = toFloat(atomicLoad(&grid[floor(p.position)].vY));
+    p.debug1 = pressure;
+    p.debug2 = density;
+
+    particles[id.x] = p;
 }

@@ -46,24 +46,24 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     p.C = B * 4.0;
 
     p.position += p.velocity * globals.dt;
-    p.debug1 = p.velocity.x;
-    p.debug2 = p.velocity.y;
+    //p.debug1 = p.velocity.x;
+    //p.debug2 = p.velocity.y;
 
     // clamp to world bounds
-    let lo = vec2f(1.0)  * globals.dX;
-    let hi = globals.worldSize.xy - 2.0 * globals.dX;
+    let lo = vec2f(1.0);
+    let hi = vec2f(f32(globals.gridSize - 2));
     p.position = clamp(p.position, lo, hi);
 
-    // let k            = 3.0;
-    // let wall_stiffness = 0.3;
-    // let x_n          = p.position + p.velocity * globals.dt * k;
-    // let wall_min     = vec2f(3.0) * globals.dX;
-    // let wall_max     = globals.worldSize.xy - 4.0 * globals.dX;
+    let k = 3.0;
+    let wall_stiffness = 0.3;
+    let x_n = p.position + p.velocity * globals.dt * k;
+    let wall_min = vec2f(1.0);
+    let wall_max = vec2f(f32(globals.gridSize - 2));
 
-    // if (x_n.x < wall_min.x) { p.velocity.x += wall_stiffness * (wall_min.x - x_n.x); }
-    // if (x_n.x > wall_max.x) { p.velocity.x += wall_stiffness * (wall_max.x - x_n.x); }
-    // if (x_n.y < wall_min.y) { p.velocity.y += wall_stiffness * (wall_min.y - x_n.y); }
-    // if (x_n.y > wall_max.y) { p.velocity.y += wall_stiffness * (wall_max.y - x_n.y); }
+    if (x_n.x < wall_min.x) { p.velocity.x += wall_stiffness * (wall_min.x - x_n.x); }
+    if (x_n.x > wall_max.x) { p.velocity.x += wall_stiffness * (wall_max.x - x_n.x); }
+    if (x_n.y < wall_min.y) { p.velocity.y += wall_stiffness * (wall_min.y - x_n.y); }
+    if (x_n.y > wall_max.y) { p.velocity.y += wall_stiffness * (wall_max.y - x_n.y); }
 
     particles[id.x] = p;
 }

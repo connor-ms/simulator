@@ -1,5 +1,7 @@
 #include "Particle.h"
 
+#include <cstdlib>
+
 std::vector<Particle> createParticleArray(int size, float xMax, float yMax, float offset)
 {
     std::vector<Particle> instances;
@@ -20,8 +22,10 @@ std::vector<Particle> createParticleArray(int size, float xMax, float yMax, floa
     {
         for (int i = 0; i < countX && created < size; i++)
         {
-            float x = offset + (i + 0.5f) * dx;
-            float y = offset + (j + 0.5f) * dy;
+            int jitter = (std::rand() % 5) + 1;
+
+            float x = offset + (i + 0.5f) * dx + jitter;
+            float y = offset + (j + 0.5f) * dy + jitter;
 
             Particle p{};
             p.position = {x, y};
