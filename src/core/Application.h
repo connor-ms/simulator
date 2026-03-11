@@ -23,8 +23,8 @@ public:
 
     bool isRunning();
     void onResize(uint32_t width, uint32_t height);
-    void onMouseMove(double xpos, double ypos) {}
-    void onMouseButton(int button, int action, int mods) {}
+    void onMouseMove(double xpos, double ypos);
+    void onMouseButton(int button, int action, int mods);
     void onScroll(double xoffset, double yoffset) {}
 
 private:
@@ -41,6 +41,9 @@ private:
     Simulator m_sim;
     Renderer m_renderer;
     GUI m_gui;
+
+    bool m_mouseDown;
+    glm::vec2 m_mousePos;
 
     const uint32_t m_kWidth = 1280;
     const uint32_t m_kHeight = 720;

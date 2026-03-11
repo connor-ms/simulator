@@ -54,6 +54,14 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     let hi = vec2f(f32(globals.gridSize - 2));
     p.position = clamp(p.position, lo, hi);
 
+    if (globals.isMouseDown == 1) {
+        let dist = p.position - globals.mousePos;
+        if (dot(dist, dist) < (10 * 10)) {
+            let force = normalize(dist);
+            p.velocity += force;
+        }
+    }
+
     let k = 3.0;
     let wall_stiffness = 0.3;
     let x_n = p.position + p.velocity * globals.dt * k;

@@ -25,7 +25,8 @@ void Application::initGlobals()
 
     m_ctx.globals = Globals{
         .windowSize = glm::vec2(fbWidth, fbHeight),
-        .worldSize = glm::vec4(64, 64, 0, 0),
+        .mousePos = glm::vec2(0, 0),
+        .isMouseDown = false,
     };
 
     int gridSize = 150;
@@ -43,7 +44,7 @@ void Application::initGlobals()
     m_ctx.globals.gridSize = gridSize;
     m_ctx.globals.dX = 1;
     m_ctx.globals.idX = 1 / m_ctx.globals.dX;
-    m_ctx.globals.dt = 0.05f;
+    m_ctx.globals.dt = 0.01f;
     m_ctx.globals.particleCount = 30000;
     m_ctx.globals.gravity = -0.4f;
 
@@ -254,17 +255,43 @@ void Application::onResize(uint32_t width, uint32_t height)
 
     m_ctx.globals.windowSize = glm::vec2(fbWidth, fbHeight);
 
-    float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
-    float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
+    // float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
+    // float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
 
-    m_ctx.globals.proj = glm::ortho(
-        -halfWidth,
-        halfWidth,
-        -halfHeight,
-        halfHeight,
-        -1.f, 1.f);
+    // m_ctx.globals.proj = glm::ortho(
+    //     -halfWidth,
+    //     halfWidth,
+    //     -halfHeight,
+    //     halfHeight,
+    //     -1.f, 1.f);
 
     m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+}
+
+void Application::onMouseMove(double xpos, double ypos)
+{
+    float x = (xpos / m_ctx.globals.windowSize.x) * 2 * m_ctx.globals.gridSize;
+    float y = (0.5 - (ypos / m_ctx.globals.windowSize.y)) * 2 * m_ctx.globals.gridSize;
+
+    m_ctx.globals.mousePos.x = x;
+    m_ctx.globals.mousePos.y = y;
+
+    std::cout << x << " " << 0.5 - (ypos / m_ctx.globals.windowSize.y) << std::endl;
+
+    m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+}
+
+void Application::onMouseButton(int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        if (action == GLFW_PRESS)
+            m_ctx.globals.isMouseDown = 1;
+        if (action == GLFW_RELEASE)
+            m_ctx.globals.isMouseDown = 0;
+
+        m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+    }
 }
 
 bool Application::isRunning()
