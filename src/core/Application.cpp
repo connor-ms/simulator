@@ -23,35 +23,34 @@ void Application::initGlobals()
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
 
-    m_ctx.globals = Globals{
-        .windowSize = glm::vec2(fbWidth, fbHeight),
-        .mousePos = glm::vec2(0, 0),
-        .isMouseDown = false,
-    };
-
-    int gridSize = 150;
+    unsigned int gridSize = 150;
 
     float halfWidth = gridSize * 0.5f;
     float halfHeight = gridSize * 0.5f;
 
-    m_ctx.globals.proj = glm::ortho(
-        -halfWidth,
-        halfWidth,
-        -halfHeight,
-        halfHeight,
-        -1.f, 1.f);
+    m_ctx.globals = Globals{
+        .windowSize = glm::vec2(fbWidth, fbHeight),
+        .mousePos = glm::vec2(0, 0),
+        .isMouseDown = false,
+        .proj = glm::ortho(
+            -halfWidth,
+            halfWidth,
+            -halfHeight,
+            halfHeight,
+            -1.f, 1.f),
 
-    m_ctx.globals.gridSize = gridSize;
-    m_ctx.globals.dX = 1;
-    m_ctx.globals.idX = 1 / m_ctx.globals.dX;
-    m_ctx.globals.dt = 0.01f;
-    m_ctx.globals.particleCount = 30000;
-    m_ctx.globals.gravity = -0.4f;
+        .gridSize = gridSize,
+        .dX = 1,  // unused
+        .idX = 1, // unused
+        .dt = 0.01f,
+        .particleCount = 30000,
+        .gravity = -0.4f,
 
-    m_ctx.globals.rest_density = 4.0f;
-    m_ctx.globals.dynamic_viscosity = 0.1f;
-    m_ctx.globals.eos_power = 4.0f;
-    m_ctx.globals.eos_stiffness = 10.0f;
+        .rest_density = 4.0f,
+        .dynamic_viscosity = 0.1f,
+        .eos_power = 4.0f,
+        .eos_stiffness = 10.0f,
+    };
 }
 
 void Application::initWindow()
@@ -87,11 +86,6 @@ void Application::initWindow()
     {
         auto that = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
         if (that != nullptr) that->onMouseButton(button, action, mods);
-    });
-    glfwSetScrollCallback(m_window, [](GLFWwindow *window, double xoffset, double yoffset)
-    {
-        auto that = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-        if (that != nullptr) that->onScroll(xoffset, yoffset);
     });
     // clang-format on
 }
@@ -254,16 +248,6 @@ void Application::onResize(uint32_t width, uint32_t height)
     m_ctx.surface.Configure(&config);
 
     m_ctx.globals.windowSize = glm::vec2(fbWidth, fbHeight);
-
-    // float halfWidth = m_ctx.globals.windowSize.x * 0.5f;
-    // float halfHeight = m_ctx.globals.windowSize.y * 0.5f;
-
-    // m_ctx.globals.proj = glm::ortho(
-    //     -halfWidth,
-    //     halfWidth,
-    //     -halfHeight,
-    //     halfHeight,
-    //     -1.f, 1.f);
 
     m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 }

@@ -7,7 +7,7 @@
 void Simulator::init(GPUContext *ctx)
 {
     m_ctx = ctx;
-    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.gridSize, m_ctx->globals.gridSize, 5);
+    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.gridSize, m_ctx->globals.gridSize, 25);
 
     initBindGroupLayouts();
     initBuffers();

@@ -59,9 +59,9 @@ fn fs_main(@builtin(position) position: vec4<f32>,
     // }
 
     let pressure = debug1;
-    let volume = debug2;
+    let density = debug2;
 
-    let maxPressure = 50.0;
+    let maxPressure = 100.0;
     let t = clamp(pressure / maxPressure, 0.0, 1.0);
 
     return vec4<f32>(t, t,1, 1.0);
