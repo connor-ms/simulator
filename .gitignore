@@ -45,3 +45,4 @@ build/
 build-web/
 imgui.ini
 .vscode/
+.DS_Store

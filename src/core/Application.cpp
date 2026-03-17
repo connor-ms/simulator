@@ -47,7 +47,7 @@ void Application::initGlobals()
         .gravity = -0.4f,
 
         .rest_density = 4.0f,
-        .dynamic_viscosity = 0.1f,
+        .dynamic_viscosity = 0.5f,
         .eos_power = 4.0f,
         .eos_stiffness = 10.0f,
     };
