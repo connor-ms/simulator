@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-std::vector<Particle> createParticleArray(int size, float xMax, float yMax, float offset)
+std::vector<Particle> createParticleArray(int size, float width, float height, glm::vec2 origin)
 {
     std::vector<Particle> instances;
     instances.reserve(size);
@@ -10,11 +10,8 @@ std::vector<Particle> createParticleArray(int size, float xMax, float yMax, floa
     int countX = static_cast<int>(std::ceil(std::sqrt(size)));
     int countY = static_cast<int>(std::ceil(float(size) / countX));
 
-    float usableWidth = xMax - 2.0f * offset;
-    float usableHeight = yMax - 2.0f * offset;
-
-    float dx = usableWidth / float(countX);
-    float dy = usableHeight / float(countY);
+    float dx = width / float(countX);
+    float dy = height / float(countY);
 
     int created = 0;
 
@@ -24,8 +21,8 @@ std::vector<Particle> createParticleArray(int size, float xMax, float yMax, floa
         {
             int jitter = (std::rand() % 5) + 1;
 
-            float x = offset + (i + 0.5f) * dx + jitter;
-            float y = offset + (j + 0.5f) * dy + jitter;
+            float x = origin.x + (i + 0.5f) * dx + jitter;
+            float y = origin.y + (j + 0.5f) * dy + jitter;
 
             Particle p{};
             p.position = {x, y};

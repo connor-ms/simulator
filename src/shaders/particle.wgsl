@@ -49,7 +49,7 @@ fn fs_main(@builtin(position) position: vec4<f32>,
 
     // let velDir = normalize(velocity) * 0.5 + 0.5;
 
-    //return vec4<f32>(velDir.x, velDir.y, t, 1.0);
+    // return vec4<f32>(velDir.x, velDir.y, t, 1.0);
 
     // if (globals.isMouseDown == 1) {
     //     let dist = vec2f(position.x, position.y) - globals.mousePos;

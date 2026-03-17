@@ -40,9 +40,9 @@ void Application::initGlobals()
             -1.f, 1.f),
 
         .gridSize = gridSize,
-        .dX = 1,  // unused
-        .idX = 1, // unused
-        .dt = 0.01f,
+        .dX = 1,
+        .idX = 1,
+        .dt = 0.05f,
         .particleCount = 30000,
         .gravity = -0.4f,
 

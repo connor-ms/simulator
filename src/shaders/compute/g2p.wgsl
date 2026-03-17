@@ -46,8 +46,8 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     p.C = B * 4.0;
 
     p.position += p.velocity * globals.dt;
-    //p.debug1 = p.velocity.x;
-    //p.debug2 = p.velocity.y;
+    // p.debug1 = p.velocity.x;
+    // p.debug2 = p.velocity.y;
 
     // clamp to world bounds
     let lo = vec2f(1.0);
