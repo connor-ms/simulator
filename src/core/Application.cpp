@@ -48,8 +48,8 @@ void Application::initGlobals()
 
         .rest_density = 4.0f,
         .dynamic_viscosity = 0.5f,
-        .eos_power = 4.0f,
         .eos_stiffness = 10.0f,
+        .eos_power = 4.0f,
     };
 }
 
