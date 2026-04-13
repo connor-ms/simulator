@@ -24,32 +24,31 @@ class Renderer
 {
 public:
     void init(GPUContext *ctx, SimulationState *simState);
-    void initBindGroupLayouts();
-    void initBuffers();
-    void initBindGroups();
-    void initPipeline();
     void onFrame(wgpu::CommandEncoder encoder);
 
 private:
+    void initBuffers();
+    void initBindGroupLayouts();
+    void initBindGroups();
+    void initPipeline();
+
     GPUContext *m_ctx;
     SimulationState *m_simState;
 
     Camera m_cam;
     Uniforms m_uniforms;
 
-    wgpu::BindGroupLayout m_bindGroupLayout;
-    wgpu::BindGroup m_bindGroup;
-
-    wgpu::Buffer m_vb;
-    wgpu::Buffer m_lineBuffer;
-
     wgpu::BindGroupLayout m_renderBindGroupLayout;
-    wgpu::BindGroup m_renderBindGroup;
-    wgpu::BindGroup m_lineRenderBindGroup;
-    wgpu::RenderPipeline m_pipeline;
-    wgpu::RenderPipeline m_linePipeline;
-
-    wgpu::Buffer m_uniformBuffer;
     wgpu::BindGroupLayout m_uniformsBindGroupLayout;
+
+    wgpu::Buffer m_particleBuffer;
+    wgpu::Buffer m_lineBuffer;
+    wgpu::Buffer m_uniformBuffer;
+
+    wgpu::BindGroup m_particleBindGroup;
+    wgpu::BindGroup m_lineRenderBindGroup;
     wgpu::BindGroup m_uniformsBindGroup;
+
+    wgpu::RenderPipeline m_particlePipeline;
+    wgpu::RenderPipeline m_linePipeline;
 };
