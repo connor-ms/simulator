@@ -6,8 +6,14 @@ struct VertexOut
     @location(2) debug2: f32,
 };
 
+struct Uniforms
+{
+    proj: mat4x4f,
+}
+
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(1) @binding(0) var<storage, read> particles: array<Particle>;
+@group(2) @binding(0) var<uniform> uniforms: Uniforms;
 
 @vertex
 fn vs_main(@location(0) pos : vec2<f32>,
@@ -20,7 +26,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
     let particle = particles[instanceIndex];
     let worldPos = (particle.position + pos * radius) - (vec2f(f32(globals.gridSize), f32(globals.gridSize)) * 0.5);
 
-    out.position = globals.proj * vec4<f32>(worldPos, 0.0, 1.0);
+    out.position = uniforms.proj * vec4<f32>(worldPos, 0.0, 1.0);
     out.uv = uv;
     out.debug1 = particle.debug1;
     out.debug2 = particle.debug2;

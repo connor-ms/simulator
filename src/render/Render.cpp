@@ -31,6 +31,8 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     m_ctx = ctx;
     m_simState = simState;
 
+    m_uniforms.projection = m_ctx->globals.proj;
+
     // top & bottom world bounds
     lines.push_back(Line{.p1 = glm::vec3(0, m_ctx->globals.gridSize, 0), .p2 = glm::vec3(m_ctx->globals.gridSize, m_ctx->globals.gridSize, 0), .thickness = .1f});
     lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(m_ctx->globals.gridSize, 0, 0), .thickness = .1f});
@@ -59,33 +61,65 @@ void Renderer::initBindGroupLayouts()
 
     if (!m_renderBindGroupLayout)
         std::cout << "ERROR: Failed to create render bind group layout!" << std::endl;
+
+    // Uniforms
+    wgpu::BindGroupLayoutEntry uniforms{};
+    uniforms.binding = 0;
+    uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+    uniforms.buffer.type = wgpu::BufferBindingType::Uniform;
+
+    wgpu::BindGroupLayoutDescriptor uniformsDesc{};
+    uniformsDesc.entryCount = 1;
+    uniformsDesc.entries = &uniforms;
+    m_uniformsBindGroupLayout = m_ctx->device.CreateBindGroupLayout(&uniformsDesc);
+
+    if (!m_uniformsBindGroupLayout)
+        std::cout << "ERROR: Failed to create uniforms bind group layout!" << std::endl;
 }
 
 void Renderer::initBuffers()
 {
     // Quad vertex buffer
-    wgpu::BufferDescriptor vbDesc{};
-    vbDesc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-    vbDesc.size = sizeof(vertices);
-    vbDesc.mappedAtCreation = false;
-    vbDesc.label = "Quad";
-    m_vb = m_ctx->device.CreateBuffer(&vbDesc);
-    m_ctx->device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
+    {
+        wgpu::BufferDescriptor desc{};
+        desc.usage = wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+        desc.size = sizeof(vertices);
+        desc.mappedAtCreation = false;
+        desc.label = "Quad";
+        m_vb = m_ctx->device.CreateBuffer(&desc);
+        m_ctx->device.GetQueue().WriteBuffer(m_vb, 0, vertices, sizeof(vertices));
 
-    if (m_vb == nullptr)
-        std::runtime_error("Failed to initialize quad vertex buffer.");
+        if (m_vb == nullptr)
+            std::runtime_error("Failed to initialize quad vertex buffer.");
+    }
 
     // Line buffer
-    wgpu::BufferDescriptor nDesc{};
-    nDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-    nDesc.mappedAtCreation = false;
-    nDesc.size = lines.size() * sizeof(Line);
-    nDesc.label = "Line";
-    m_lineBuffer = m_ctx->device.CreateBuffer(&nDesc);
-    m_ctx->device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
+    {
+        wgpu::BufferDescriptor desc{};
+        desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+        desc.mappedAtCreation = false;
+        desc.size = lines.size() * sizeof(Line);
+        desc.label = "Line";
+        m_lineBuffer = m_ctx->device.CreateBuffer(&desc);
+        m_ctx->device.GetQueue().WriteBuffer(m_lineBuffer, 0, lines.data(), lines.size() * sizeof(Line));
 
-    if (m_lineBuffer == nullptr)
-        std::runtime_error("ERROR: Failed to initialize line buffer.");
+        if (m_lineBuffer == nullptr)
+            std::runtime_error("ERROR: Failed to initialize line buffer.");
+    }
+
+    // Uniforms
+    {
+        wgpu::BufferDescriptor desc{};
+        desc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
+        desc.mappedAtCreation = false;
+        desc.size = sizeof(Uniforms);
+        desc.label = "Uniforms";
+        m_uniformBuffer = m_ctx->device.CreateBuffer(&desc);
+        m_ctx->device.GetQueue().WriteBuffer(m_uniformBuffer, 0, &m_uniforms, sizeof(m_uniforms));
+
+        if (m_uniformBuffer == nullptr)
+            std::runtime_error("ERROR: Failed to initialize uniform buffer.");
+    }
 }
 
 void Renderer::initBindGroups()
@@ -123,6 +157,19 @@ void Renderer::initBindGroups()
 
     if (!m_lineRenderBindGroup)
         std::cout << "ERROR: Failed to create line render bind group!" << std::endl;
+
+    // Uniforms
+    wgpu::BindGroupEntry uniformsEntry{};
+    uniformsEntry.binding = 0;
+    uniformsEntry.buffer = m_uniformBuffer;
+    uniformsEntry.offset = 0;
+    uniformsEntry.size = sizeof(Uniforms);
+
+    wgpu::BindGroupDescriptor uniformsDesc{};
+    uniformsDesc.layout = m_uniformsBindGroupLayout;
+    uniformsDesc.entryCount = 1;
+    uniformsDesc.entries = &uniformsEntry;
+    m_uniformsBindGroup = m_ctx->device.CreateBindGroup(&uniformsDesc);
 }
 
 void Renderer::initPipeline()
@@ -153,10 +200,11 @@ void Renderer::initPipeline()
     wgpu::BindGroupLayout layouts[] = {
         m_ctx->globalsBindGroupLayout,
         m_renderBindGroupLayout,
+        m_uniformsBindGroupLayout,
     };
 
     wgpu::PipelineLayoutDescriptor plDesc{};
-    plDesc.bindGroupLayoutCount = 2;
+    plDesc.bindGroupLayoutCount = 3;
     plDesc.bindGroupLayouts = layouts;
     wgpu::PipelineLayout renderPipelineLayout = m_ctx->device.CreatePipelineLayout(&plDesc);
 
@@ -228,10 +276,13 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
 
+    // m_ctx->globals.proj = m_cam.getViewMatrix();
+
     // Draw particles
     pass.SetPipeline(m_pipeline);
     pass.SetBindGroup(0, m_ctx->globalsBindGroup);
     pass.SetBindGroup(1, m_renderBindGroup);
+    pass.SetBindGroup(2, m_uniformsBindGroup);
     pass.SetVertexBuffer(0, m_vb);
     pass.Draw(6, static_cast<uint32_t>(m_simState->particles.size()));
 
@@ -239,6 +290,7 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
     pass.SetPipeline(m_linePipeline);
     pass.SetBindGroup(0, m_ctx->globalsBindGroup);
     pass.SetBindGroup(1, m_lineRenderBindGroup);
+    pass.SetBindGroup(2, m_uniformsBindGroup);
     pass.SetVertexBuffer(0, m_vb);
     pass.Draw(6, static_cast<uint32_t>(lines.size()));
 

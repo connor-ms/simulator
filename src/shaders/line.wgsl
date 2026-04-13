@@ -12,8 +12,14 @@ struct Line
     thickness: f32,
 };
 
+struct Uniforms
+{
+    proj: mat4x4f,
+}
+
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(1) @binding(0) var<storage, read> lines: array<Line>;
+@group(2) @binding(0) var<uniform> uniforms: Uniforms;
 
 @vertex
 fn vs_main(@location(0) pos : vec2<f32>,
