@@ -234,6 +234,8 @@ void Application::onResize(uint32_t width, uint32_t height)
     wgpu::SurfaceConfiguration config{.device = m_ctx.device, .format = m_ctx.format, .width = static_cast<uint32_t>(fbWidth), .height = static_cast<uint32_t>(fbHeight)};
     m_ctx.surface.Configure(&config);
 
+    m_renderer.onResize(fbWidth, fbHeight);
+
     m_ctx.globals.windowSize = glm::vec2(fbWidth, fbHeight);
 
     m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));

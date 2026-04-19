@@ -312,3 +312,15 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
 
     pass.End();
 }
+
+void Renderer::onResize(uint32_t width, uint32_t height)
+{
+    m_uniforms.projection =
+        glm::perspective(
+            glm::radians(60.0f),
+            ((float)width / (float)height),
+            0.1f,
+            200.0f);
+
+    m_ctx->device.GetQueue().WriteBuffer(m_uniformBuffer, 0, &m_uniforms, sizeof(m_uniforms));
+}
