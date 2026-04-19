@@ -37,16 +37,22 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
             glm::radians(60.0f),
             1280.0f / 720.0f, // TODO: don't use hardcoded initial size
             0.1f,
-            200.0f);
+            1000.0f);
 
     m_uniforms.view = m_cam.getViewMatrix();
 
+    const float LINE_THICKNESS = 1.0f;
+
+    // TODO: figure out why this needs to be multiplied by 2
+    //       probably an issue in line.wgsl
+    const float DEST = m_ctx->globals.gridSize * 2.f;
+
     // top & bottom world bounds
-    lines.push_back(Line{.p1 = glm::vec3(0, m_ctx->globals.gridSize, 0), .p2 = glm::vec3(m_ctx->globals.gridSize, m_ctx->globals.gridSize, 0), .thickness = .1f});
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(m_ctx->globals.gridSize, 0, 0), .thickness = .1f});
+    lines.push_back(Line{.p1 = glm::vec3(0, DEST, 0), .p2 = glm::vec3(DEST, DEST, 0), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(DEST, 0, 0), .thickness = LINE_THICKNESS});
     // left & right world bounds
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, m_ctx->globals.gridSize, 0), .thickness = .1f});
-    lines.push_back(Line{.p1 = glm::vec3(m_ctx->globals.gridSize, 0, 0), .p2 = glm::vec3(m_ctx->globals.gridSize, m_ctx->globals.gridSize, 0), .thickness = .1f});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, DEST, 0), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(DEST, 0, 0), .p2 = glm::vec3(DEST, DEST, 0), .thickness = LINE_THICKNESS});
 
     initBuffers();
     initBindGroupLayouts();

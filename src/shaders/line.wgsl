@@ -36,7 +36,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
     let delta = p2 - p1;
     let length = length(delta);
     let dir = normalize(delta);
-
+ 
     let perp = normalize(vec3<f32>(-dir.y, dir.x, 0.0));
 
     let t = pos.x + 0.5;
@@ -45,7 +45,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
 
     let worldSize = vec3<f32>(f32(globals.gridSize), f32(globals.gridSize), f32(globals.gridSize));
 
-    let worldPos = (p1 + along + offset) - (worldSize * 0.5);
+    let worldPos = (p1 + along + offset) - (worldSize );
 
     out.position = uniforms.proj * uniforms.view * vec4<f32>(worldPos, 1.0);
     out.uv = uv;
