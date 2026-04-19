@@ -17,7 +17,6 @@ struct Uniforms
 {
     glm::mat4x4 projection;
     glm::mat4x4 view;
-    //    glm::mat4x4 model;
 };
 
 class Renderer

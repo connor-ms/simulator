@@ -24,7 +24,6 @@ void Application::initGlobals()
     glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
 
     m_ctx.globals = Globals{
-        .windowSize = glm::vec2(fbWidth, fbHeight),
         .mousePos = glm::vec2(0, 0),
         .isMouseDown = false,
 
@@ -235,23 +234,19 @@ void Application::onResize(uint32_t width, uint32_t height)
     m_ctx.surface.Configure(&config);
 
     m_renderer.onResize(fbWidth, fbHeight);
-
-    m_ctx.globals.windowSize = glm::vec2(fbWidth, fbHeight);
-
-    m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 }
 
 void Application::onMouseMove(double xpos, double ypos)
 {
-    float x = (xpos / m_ctx.globals.windowSize.x) * 2 * m_ctx.globals.gridSize;
-    float y = (0.5 - (ypos / m_ctx.globals.windowSize.y)) * 2 * m_ctx.globals.gridSize;
+    // float x = (xpos / m_ctx.globals.windowSize.x) * 2 * m_ctx.globals.gridSize;
+    // float y = (0.5 - (ypos / m_ctx.globals.windowSize.y)) * 2 * m_ctx.globals.gridSize;
 
-    m_ctx.globals.mousePos.x = x;
-    m_ctx.globals.mousePos.y = y;
+    // m_ctx.globals.mousePos.x = x;
+    // m_ctx.globals.mousePos.y = y;
 
-    std::cout << x << " " << 0.5 - (ypos / m_ctx.globals.windowSize.y) << std::endl;
+    // std::cout << x << " " << 0.5 - (ypos / m_ctx.globals.windowSize.y) << std::endl;
 
-    m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+    // m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 }
 
 void Application::onMouseButton(int button, int action, int mods)

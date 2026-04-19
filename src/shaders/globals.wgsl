@@ -7,8 +7,6 @@
 
 struct Globals
 {
-    windowSize: vec2<f32>,
-    _pad: vec2<f32>,
     mousePos: vec2<f32>,
     isMouseDown: i32,
     _pad2: i32,

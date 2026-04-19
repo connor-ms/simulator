@@ -6,8 +6,6 @@
 
 struct Globals
 {
-    glm::vec2 windowSize;
-    glm::vec2 _pad;
     glm::vec2 mousePos;
     glm::i32 isMouseDown;
     glm::i32 _pad2;

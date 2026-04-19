@@ -35,7 +35,7 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     m_uniforms.projection =
         glm::perspective(
             glm::radians(60.0f),
-            ((float)m_ctx->globals.windowSize.x / (float)m_ctx->globals.windowSize.y),
+            1280.0f / 720.0f, // TODO: don't use hardcoded initial size
             0.1f,
             200.0f);
 
