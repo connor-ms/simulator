@@ -20,7 +20,10 @@ private:
     glm::mat4x4 m_view;
 
     glm::vec3 m_target;
-    glm::vec3 m_pos;
+
+    float m_pitch;
+    float m_yaw;
+    float m_distance;
 
     int m_screenWidth;
     int m_screenHeight;

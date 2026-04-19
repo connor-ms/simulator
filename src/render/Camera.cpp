@@ -7,8 +7,10 @@ Camera::Camera()
     m_screenWidth = 1280;
     m_screenHeight = 720;
 
-    m_pos = glm::vec3(75.f, 75.f, 150.0f);
     m_target = glm::vec3(75.f, 75.f, 0);
+    m_pitch = 0.f;
+    m_yaw = 90.f;
+    m_distance = 150.0f;
 
     buildProjectionMatrix(1280, 720);
     buildViewMatrix();
@@ -33,13 +35,13 @@ void Camera::buildViewMatrix()
 
 glm::vec3 Camera::getPosition()
 {
-    // glm::vec3 pos;
+    glm::vec3 pos;
 
-    // pos.x = target.x + distance * cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-    // pos.y = target.y + distance * sin(glm::radians(pitch));
-    // pos.z = target.z + distance * cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+    pos.x = m_target.x + m_distance * cos(glm::radians(m_pitch)) * cos(glm::radians(m_yaw));
+    pos.y = m_target.y + m_distance * sin(glm::radians(m_pitch));
+    pos.z = m_target.z + m_distance * cos(glm::radians(m_pitch)) * sin(glm::radians(m_yaw));
 
-    return m_pos;
+    return pos;
 }
 
 glm::vec3 Camera::screenToWorld(int screenX, int screenY)
@@ -64,5 +66,5 @@ glm::vec3 Camera::screenToWorld(int screenX, int screenY)
     float t = -rayOrigin.z / rayDir.z;
     glm::vec3 worldPos = rayOrigin + t * rayDir;
 
-    return worldPos; // z will be ~0, x and y are your world coords
+    return worldPos;
 }
