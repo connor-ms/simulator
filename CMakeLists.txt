@@ -11,6 +11,7 @@ add_executable(app
     src/core/Util.cpp
     src/simulation/Simulator.cpp
     src/simulation/Particle.cpp
+    src/render/Camera.cpp
     src/render/Render.cpp
     src/gui/GUI.cpp
 )

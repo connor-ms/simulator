@@ -32,6 +32,8 @@ void Application::initGlobals()
         .windowSize = glm::vec2(fbWidth, fbHeight),
         .mousePos = glm::vec2(0, 0),
         .isMouseDown = false,
+
+        // todo: remove this
         .proj = glm::ortho(
             -halfWidth,
             halfWidth,

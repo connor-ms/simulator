@@ -30,8 +30,16 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
 {
     m_ctx = ctx;
     m_simState = simState;
+    m_cam = Camera();
 
-    m_uniforms.projection = m_ctx->globals.proj;
+    m_uniforms.projection =
+        glm::perspective(
+            glm::radians(60.0f),
+            ((float)m_ctx->globals.windowSize.x / (float)m_ctx->globals.windowSize.y),
+            0.1f,
+            200.0f);
+
+    m_uniforms.view = m_cam.getViewMatrix();
 
     // top & bottom world bounds
     lines.push_back(Line{.p1 = glm::vec3(0, m_ctx->globals.gridSize, 0), .p2 = glm::vec3(m_ctx->globals.gridSize, m_ctx->globals.gridSize, 0), .thickness = .1f});
