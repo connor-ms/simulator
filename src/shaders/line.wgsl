@@ -15,6 +15,7 @@ struct Line
 struct Uniforms
 {
     proj: mat4x4f,
+    view: mat4x4f,
 }
 
 @group(0) @binding(0) var<uniform> globals: Globals;
@@ -46,7 +47,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
 
     let worldPos = (p1 + along + offset) - (worldSize * 0.5);
 
-    out.position = globals.proj * vec4<f32>(worldPos, 1.0);
+    out.position = uniforms.proj * uniforms.view * vec4<f32>(worldPos, 1.0);
     out.uv = uv;
 
     return out;
