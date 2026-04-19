@@ -271,6 +271,8 @@ void Application::onMouseButton(int button, int action, int mods)
         if (action == GLFW_RELEASE)
             m_rightMouseDown = 0;
     }
+
+    m_renderer.getCam().onMouseButton(button, action, mods);
 }
 
 bool Application::isRunning()

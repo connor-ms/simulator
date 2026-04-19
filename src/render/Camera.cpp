@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <iostream>
+#include <GLFW/glfw3.h>
 
 Camera::Camera()
 {
@@ -40,6 +41,14 @@ void Camera::onMouseMove(double xpos, double ypos)
     m_pitch = glm::clamp(m_pitch, -89.0f, 89.0f);
 
     buildViewMatrix();
+}
+
+void Camera::onMouseButton(int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+    {
+        m_firstMove = true;
+    }
 }
 
 void Camera::buildProjectionMatrix(int width, int height)
