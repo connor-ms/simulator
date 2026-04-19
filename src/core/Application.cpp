@@ -23,27 +23,12 @@ void Application::initGlobals()
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
 
-    unsigned int gridSize = 150;
-
-    float halfWidth = gridSize * 0.5f;
-    float halfHeight = gridSize * 0.5f;
-
     m_ctx.globals = Globals{
         .windowSize = glm::vec2(fbWidth, fbHeight),
         .mousePos = glm::vec2(0, 0),
         .isMouseDown = false,
 
-        // todo: remove this
-        .proj = glm::ortho(
-            -halfWidth,
-            halfWidth,
-            -halfHeight,
-            halfHeight,
-            -1.f, 1.f),
-
-        .gridSize = gridSize,
-        .dX = 1,
-        .idX = 1,
+        .gridSize = 150,
         .dt = 0.05f,
         .particleCount = 30000,
         .gravity = -0.4f,

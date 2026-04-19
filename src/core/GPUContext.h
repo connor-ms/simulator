@@ -11,10 +11,7 @@ struct Globals
     glm::vec2 mousePos;
     glm::i32 isMouseDown;
     glm::i32 _pad2;
-    glm::mat4x4 proj;
     glm::u32 gridSize;
-    glm::f32 dX;
-    glm::f32 idX;
     glm::f32 dt;
     glm::u32 particleCount;
     glm::f32 gravity;
