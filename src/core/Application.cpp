@@ -73,6 +73,11 @@ void Application::initWindow()
         auto that = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
         if (that != nullptr) that->onMouseButton(button, action, mods);
     });
+    glfwSetScrollCallback(m_window, [](GLFWwindow *window, double xoffset, double yoffset)
+    {
+        auto that = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+        if (that != nullptr) that->onMouseScroll(xoffset, yoffset);
+    });
     // clang-format on
 }
 
@@ -273,6 +278,11 @@ void Application::onMouseButton(int button, int action, int mods)
     }
 
     m_renderer.getCam().onMouseButton(button, action, mods);
+}
+
+void Application::onMouseScroll(double xoffset, double yoffset)
+{
+    m_renderer.getCam().onMouseScroll(xoffset, yoffset);
 }
 
 bool Application::isRunning()

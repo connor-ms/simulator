@@ -51,6 +51,13 @@ void Camera::onMouseButton(int button, int action, int mods)
     }
 }
 
+void Camera::onMouseScroll(double xoffset, double yoffset)
+{
+    // TODO: define min and max zoom
+    m_distance -= yoffset * 10;
+    buildViewMatrix();
+}
+
 void Camera::buildProjectionMatrix(int width, int height)
 {
     m_screenWidth = width;

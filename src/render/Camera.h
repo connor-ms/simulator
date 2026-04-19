@@ -8,6 +8,7 @@ public:
 
     void onMouseMove(double xpos, double ypos);
     void onMouseButton(int button, int action, int mods);
+    void onMouseScroll(double xoffset, double yoffset);
 
     void buildProjectionMatrix(int width, int height);
     glm::mat4x4 getProjectionMatrix() { return m_projection; };
