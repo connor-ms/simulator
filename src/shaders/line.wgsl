@@ -28,26 +28,28 @@ fn vs_main(@location(0) pos : vec2<f32>,
            @builtin(instance_index) instanceIndex: u32) -> VertexOut
 {
     var out: VertexOut;
-
     let line = lines[instanceIndex];
     let p1 = line.p1;
     let p2 = line.p2;
-
     let delta = p2 - p1;
-    let length = length(delta);
+    let len = length(delta);
     let dir = normalize(delta);
- 
-    let perp = normalize(vec3<f32>(-dir.y, dir.x, 0.0));
+
+    let viewForward = normalize(vec3<f32>(
+        uniforms.view[0][2],
+        uniforms.view[1][2],
+        uniforms.view[2][2]
+    ));
+
+    let perp = normalize(cross(dir, viewForward));
 
     let t = pos.x + 0.5;
-    let along = dir * (t * length);
+    let along = dir * (t * len);
     let offset = perp * (pos.y * line.thickness);
-
     let worldPos = p1 + along + offset;
 
     out.position = uniforms.proj * uniforms.view * vec4<f32>(worldPos, 1.0);
     out.uv = uv;
-
     return out;
 }
 
