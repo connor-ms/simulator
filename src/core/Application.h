@@ -42,6 +42,7 @@ private:
     GUI m_gui;
 
     bool m_mouseDown;
+    bool m_rightMouseDown;
     glm::vec2 m_mousePos;
 
     const uint32_t m_kWidth = 1280;

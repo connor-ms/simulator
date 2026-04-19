@@ -245,6 +245,11 @@ void Application::onMouseMove(double xpos, double ypos)
     m_ctx.globals.mousePos.y = pos.y;
 
     m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+
+    if (m_rightMouseDown)
+    {
+        m_renderer.getCam().onMouseMove(xpos, ypos);
+    }
 }
 
 void Application::onMouseButton(int button, int action, int mods)
@@ -257,6 +262,14 @@ void Application::onMouseButton(int button, int action, int mods)
             m_ctx.globals.isMouseDown = 0;
 
         m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    {
+        if (action == GLFW_PRESS)
+            m_rightMouseDown = 1;
+        if (action == GLFW_RELEASE)
+            m_rightMouseDown = 0;
     }
 }
 

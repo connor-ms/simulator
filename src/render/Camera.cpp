@@ -12,7 +12,33 @@ Camera::Camera()
     m_yaw = 90.f;
     m_distance = 150.0f;
 
+    m_firstMove = true;
+
     buildProjectionMatrix(1280, 720);
+    buildViewMatrix();
+}
+
+void Camera::onMouseMove(double xpos, double ypos)
+{
+    if (m_firstMove)
+    {
+        m_lastX = xpos;
+        m_lastY = ypos;
+        m_firstMove = false;
+        return;
+    }
+
+    float dx = xpos - m_lastX;
+    float dy = ypos - m_lastY;
+    m_lastX = xpos;
+    m_lastY = ypos;
+
+    const float sensitivity = 0.1f;
+    m_yaw += dx * sensitivity;
+    m_pitch += dy * sensitivity;
+
+    m_pitch = glm::clamp(m_pitch, -89.0f, 89.0f);
+
     buildViewMatrix();
 }
 

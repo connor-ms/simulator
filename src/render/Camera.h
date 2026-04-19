@@ -6,6 +6,8 @@ class Camera
 public:
     Camera();
 
+    void onMouseMove(double xpos, double ypos);
+
     void buildProjectionMatrix(int width, int height);
     glm::mat4x4 getProjectionMatrix() { return m_projection; };
 
@@ -24,6 +26,10 @@ private:
     float m_pitch;
     float m_yaw;
     float m_distance;
+
+    bool m_firstMove;
+    int m_lastX;
+    int m_lastY;
 
     int m_screenWidth;
     int m_screenHeight;

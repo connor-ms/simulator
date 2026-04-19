@@ -280,6 +280,11 @@ void Renderer::initPipeline()
 
 void Renderer::onFrame(wgpu::CommandEncoder encoder)
 {
+    m_uniforms.projection = m_cam.getProjectionMatrix();
+    m_uniforms.view = m_cam.getViewMatrix();
+
+    m_ctx->device.GetQueue().WriteBuffer(m_uniformBuffer, 0, &m_uniforms, sizeof(m_uniforms));
+
     wgpu::SurfaceTexture surfaceTexture;
     m_ctx->surface.GetCurrentTexture(&surfaceTexture);
 

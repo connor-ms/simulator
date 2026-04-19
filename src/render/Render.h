@@ -29,7 +29,7 @@ public:
     void onMouseMove(double xpos, double ypos);
     void onMouseButton(int button, int action, int mods);
 
-    Camera getCam() { return m_cam; }
+    Camera &getCam() { return m_cam; }
 
 private:
     void initBuffers();
