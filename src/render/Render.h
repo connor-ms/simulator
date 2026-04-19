@@ -26,8 +26,10 @@ public:
 
     void onFrame(wgpu::CommandEncoder encoder);
     void onResize(uint32_t width, uint32_t height);
-    void onMouseMove(double xpos, double ypos) {}
-    void onMouseButton(int button, int action, int mods) {}
+    void onMouseMove(double xpos, double ypos);
+    void onMouseButton(int button, int action, int mods);
+
+    Camera getCam() { return m_cam; }
 
 private:
     void initBuffers();

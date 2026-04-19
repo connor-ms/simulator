@@ -6,12 +6,22 @@ class Camera
 public:
     Camera();
 
-    glm::mat4x4 getViewMatrix();
+    void buildProjectionMatrix(int width, int height);
+    glm::mat4x4 getProjectionMatrix() { return m_projection; };
+
+    void buildViewMatrix();
+    glm::mat4x4 getViewMatrix() { return m_view; }
+
     glm::vec3 getPosition();
+    glm::vec3 screenToWorld(int x, int y);
 
 private:
-    glm::vec3 target;
-    float distance;
-    float yaw;
-    float pitch;
+    glm::mat4x4 m_projection;
+    glm::mat4x4 m_view;
+
+    glm::vec3 m_target;
+    glm::vec3 m_pos;
+
+    int m_screenWidth;
+    int m_screenHeight;
 };

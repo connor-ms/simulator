@@ -32,20 +32,14 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     m_simState = simState;
     m_cam = Camera();
 
-    m_uniforms.projection =
-        glm::perspective(
-            glm::radians(60.0f),
-            1280.0f / 720.0f, // TODO: don't use hardcoded initial size
-            0.1f,
-            1000.0f);
-
+    m_uniforms.projection = m_cam.getProjectionMatrix();
     m_uniforms.view = m_cam.getViewMatrix();
 
     const float LINE_THICKNESS = 1.0f;
 
     // TODO: figure out why this needs to be multiplied by 2
     //       probably an issue in line.wgsl
-    const float DEST = m_ctx->globals.gridSize * 2.f;
+    const float DEST = m_ctx->globals.gridSize;
 
     // top & bottom world bounds
     lines.push_back(Line{.p1 = glm::vec3(0, DEST, 0), .p2 = glm::vec3(DEST, DEST, 0), .thickness = LINE_THICKNESS});
@@ -321,12 +315,8 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
 
 void Renderer::onResize(uint32_t width, uint32_t height)
 {
-    m_uniforms.projection =
-        glm::perspective(
-            glm::radians(60.0f),
-            ((float)width / (float)height),
-            0.1f,
-            200.0f);
+    m_cam.buildProjectionMatrix(width, height);
+    m_uniforms.projection = m_cam.getProjectionMatrix();
 
     m_ctx->device.GetQueue().WriteBuffer(m_uniformBuffer, 0, &m_uniforms, sizeof(m_uniforms));
 }

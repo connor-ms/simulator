@@ -238,15 +238,13 @@ void Application::onResize(uint32_t width, uint32_t height)
 
 void Application::onMouseMove(double xpos, double ypos)
 {
-    // float x = (xpos / m_ctx.globals.windowSize.x) * 2 * m_ctx.globals.gridSize;
-    // float y = (0.5 - (ypos / m_ctx.globals.windowSize.y)) * 2 * m_ctx.globals.gridSize;
+    auto pos = m_renderer.getCam().screenToWorld(xpos, ypos);
+    std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
 
-    // m_ctx.globals.mousePos.x = x;
-    // m_ctx.globals.mousePos.y = y;
+    m_ctx.globals.mousePos.x = pos.x;
+    m_ctx.globals.mousePos.y = pos.y;
 
-    // std::cout << x << " " << 0.5 - (ypos / m_ctx.globals.windowSize.y) << std::endl;
-
-    // m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
+    m_ctx.device.GetQueue().WriteBuffer(m_ctx.globalsBuffer, 0, &m_ctx.globals, sizeof(Globals));
 }
 
 void Application::onMouseButton(int button, int action, int mods)
