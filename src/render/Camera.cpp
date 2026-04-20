@@ -55,6 +55,7 @@ void Camera::onMouseScroll(double xoffset, double yoffset)
 {
     // TODO: define min and max zoom
     m_distance -= yoffset * 10;
+    m_yaw += xoffset * 10;
     buildViewMatrix();
 }
 
