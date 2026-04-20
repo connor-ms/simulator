@@ -4,7 +4,8 @@
 
 struct GridNode
 {
-    int32_t vX;
-    int32_t vY;
-    int32_t mass;
+    std::atomic<int32_t> vX;
+    std::atomic<int32_t> vY;
+    std::atomic<int32_t> vZ;
+    std::atomic<int32_t> mass;
 };
