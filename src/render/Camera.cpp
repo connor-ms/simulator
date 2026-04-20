@@ -8,10 +8,10 @@ Camera::Camera()
     m_screenWidth = 1280;
     m_screenHeight = 720;
 
-    m_target = glm::vec3(75.f, 75.f, 0);
-    m_pitch = 0.f;
-    m_yaw = 90.f;
-    m_distance = 150.0f;
+    m_target = glm::vec3(32.f, 32.f, 32.f);
+    m_pitch = 15.f;
+    m_yaw = 80.f;
+    m_distance = 100.0f;
 
     m_firstMove = true;
 

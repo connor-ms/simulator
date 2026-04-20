@@ -25,9 +25,9 @@ fn vs_main(@location(0) pos : vec2<f32>,
     let radius = vec2<f32>(2, 2);
 
     let particle = particles[instanceIndex];
-    let worldPos = particle.position + pos * radius;
-
-    out.position = uniforms.proj * uniforms.view * vec4<f32>(worldPos, 0.0, 1.0);
+    let worldPos = particle.position + vec3f(pos * radius, 0.0);
+    
+    out.position = uniforms.proj * uniforms.view * vec4<f32>(worldPos, 1.0);
     out.uv = uv;
     out.debug1 = particle.debug1;
     out.debug2 = particle.debug2;
@@ -68,7 +68,7 @@ fn fs_main(@builtin(position) position: vec4<f32>,
     let pressure = debug1;
     let density = debug2;
 
-    let maxPressure = 100.0;
+    let maxPressure = 50.0;
     let t = clamp(pressure / maxPressure, 0.0, 1.0);
 
     return vec4<f32>(t, t,1, 1.0);

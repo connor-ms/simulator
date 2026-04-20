@@ -7,7 +7,7 @@
 void Simulator::init(GPUContext *ctx)
 {
     m_ctx = ctx;
-    m_state.particles = createParticleArray(m_ctx->globals.particleCount, 100, 100, {10, 30});
+    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.gridSize, 0.5);
 
     initBindGroupLayouts();
     initBuffers();
@@ -57,7 +57,7 @@ void Simulator::initBuffers()
         wgpu::BufferDescriptor desc{};
         desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
         desc.mappedAtCreation = false;
-        desc.size = std::pow(m_ctx->globals.gridSize, 2) * sizeof(GridNode);
+        desc.size = std::pow(m_ctx->globals.gridSize, 3) * sizeof(GridNode);
         desc.label = "GridNodes";
         m_state.gridBuffer = m_ctx->device.CreateBuffer(&desc);
 
@@ -68,19 +68,17 @@ void Simulator::initBuffers()
 
 void Simulator::initBindGroups()
 {
-    uint32_t particleBufferSize = static_cast<uint32_t>(m_state.particles.size() * sizeof(Particle));
-
     wgpu::BindGroupEntry entries[2];
 
     entries[0].binding = 0;
     entries[0].buffer = m_state.particleBuffer;
     entries[0].offset = 0;
-    entries[0].size = particleBufferSize;
+    entries[0].size = m_state.particles.size() * sizeof(Particle);
 
     entries[1].binding = 1;
     entries[1].buffer = m_state.gridBuffer;
     entries[1].offset = 0;
-    entries[1].size = std::pow(m_ctx->globals.gridSize, 2) * sizeof(GridNode);
+    entries[1].size = std::pow(m_ctx->globals.gridSize, 3) * sizeof(GridNode);
 
     wgpu::BindGroupDescriptor computeDesc{};
     computeDesc.layout = m_bindGroupLayout;
@@ -202,7 +200,7 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
 
             uint32_t workgroupSize = 8;
             uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-            computePass.DispatchWorkgroups(workgroupCount, workgroupCount, 1);
+            computePass.DispatchWorkgroups(workgroupCount, workgroupCount, workgroupCount);
 
             computePass.End();
         }
@@ -244,7 +242,7 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
 
             uint32_t workgroupSize = 8;
             uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-            computePass.DispatchWorkgroups(workgroupCount, workgroupCount, 1);
+            computePass.DispatchWorkgroups(workgroupCount, workgroupCount, workgroupCount);
 
             computePass.End();
         }

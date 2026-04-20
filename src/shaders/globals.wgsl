@@ -22,17 +22,19 @@ struct Globals
 
 struct Particle
 {
-    position: vec2f,
-    velocity: vec2f,
-    C: mat2x2f,
+    position: vec3f,
+    velocity: vec3f,
+    C: mat3x3f,
     debug1: f32,
     debug2: f32,
+    @size(8) _pad: vec2f,
 }
 
 struct GridNode
 {
     vX: atomic<i32>,
     vY: atomic<i32>,
+    vZ: atomic<i32>,
     mass: atomic<i32>,
 }
 

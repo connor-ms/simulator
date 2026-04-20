@@ -27,14 +27,14 @@ void Application::initGlobals()
         .mousePos = glm::vec2(0, 0),
         .isMouseDown = false,
 
-        .gridSize = 150,
-        .dt = 0.05f,
-        .particleCount = 30000,
+        .gridSize = 64,
+        .dt = 0.04f,
+        .particleCount = 64000,
         .gravity = -0.4f,
 
         .rest_density = 4.0f,
-        .dynamic_viscosity = 0.5f,
-        .eos_stiffness = 10.0f,
+        .dynamic_viscosity = 0.1f,
+        .eos_stiffness = 3.0f,
         .eos_power = 4.0f,
     };
 }
@@ -108,8 +108,14 @@ void Application::initInstance()
     m_ctx.instance.WaitAny(f1, UINT64_MAX);
     std::cout << "Got adapter!" << std::endl;
 
+    // TODO: improve device request
     std::cout << "Requesting device..." << std::endl;
+    wgpu::Limits limits{};
+    limits.maxComputeInvocationsPerWorkgroup = 1024;
+
     wgpu::DeviceDescriptor desc{};
+    desc.requiredLimits = &limits;
+
     desc.SetUncapturedErrorCallback(
         [](const wgpu::Device &, wgpu::ErrorType errorType, wgpu::StringView message)
         {
@@ -244,7 +250,7 @@ void Application::onResize(uint32_t width, uint32_t height)
 void Application::onMouseMove(double xpos, double ypos)
 {
     auto pos = m_renderer.getCam().screenToWorld(xpos, ypos);
-    std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
+    // std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
 
     m_ctx.globals.mousePos.x = pos.x;
     m_ctx.globals.mousePos.y = pos.y;

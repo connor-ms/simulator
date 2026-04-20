@@ -47,16 +47,16 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     lines.push_back(Line{.p1 = glm::vec3(DEST, 0, 0), .p2 = glm::vec3(DEST, DEST, 0), .thickness = LINE_THICKNESS});
 
     // rear face
-    lines.push_back(Line{.p1 = glm::vec3(0, DEST, -DEST), .p2 = glm::vec3(DEST, DEST, -DEST), .thickness = LINE_THICKNESS});
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, -DEST), .p2 = glm::vec3(DEST, 0, -DEST), .thickness = LINE_THICKNESS});
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, -DEST), .p2 = glm::vec3(0, DEST, -DEST), .thickness = LINE_THICKNESS});
-    lines.push_back(Line{.p1 = glm::vec3(DEST, 0, -DEST), .p2 = glm::vec3(DEST, DEST, -DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, DEST, DEST), .p2 = glm::vec3(DEST, DEST, DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, DEST), .p2 = glm::vec3(DEST, 0, DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, DEST), .p2 = glm::vec3(0, DEST, DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(DEST, 0, DEST), .p2 = glm::vec3(DEST, DEST, DEST), .thickness = LINE_THICKNESS});
 
     // connecting edges
-    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, 0, -DEST), .thickness = LINE_THICKNESS});
-    lines.push_back(Line{.p1 = glm::vec3(DEST, 0, 0), .p2 = glm::vec3(DEST, 0, -DEST), .thickness = LINE_THICKNESS});
-    lines.push_back(Line{.p1 = glm::vec3(0, DEST, 0), .p2 = glm::vec3(0, DEST, -DEST), .thickness = LINE_THICKNESS});
-    lines.push_back(Line{.p1 = glm::vec3(DEST, DEST, 0), .p2 = glm::vec3(DEST, DEST, -DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, 0, DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(DEST, 0, 0), .p2 = glm::vec3(DEST, 0, DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, DEST, 0), .p2 = glm::vec3(0, DEST, DEST), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(DEST, DEST, 0), .p2 = glm::vec3(DEST, DEST, DEST), .thickness = LINE_THICKNESS});
 
     initBuffers();
     initBindGroupLayouts();

@@ -1,38 +1,40 @@
 #include "Particle.h"
 
 #include <cstdlib>
+#include <iostream>
 
-std::vector<Particle> createParticleArray(int size, float width, float height, glm::vec2 origin)
+std::vector<Particle> createParticleArray(int count, float worldSize, float spacing)
 {
     std::vector<Particle> instances;
-    instances.reserve(size);
 
-    int countX = static_cast<int>(std::ceil(std::sqrt(size)));
-    int countY = static_cast<int>(std::ceil(float(size) / countX));
+    int n = static_cast<int>(std::ceil(std::cbrt(float(count))));
+    instances.reserve(n * n * n);
 
-    float dx = width / float(countX);
-    float dy = height / float(countY);
+    float cubeSize = n * spacing;
 
-    int created = 0;
+    float startX = (worldSize - cubeSize) / 2.0f;
+    float startY = (worldSize - cubeSize) / 2.0f;
+    float startZ = (worldSize - cubeSize) / 2.0f;
 
-    for (int j = 0; j < countY && created < size; j++)
+    for (int k = 0; k < n; k++)
     {
-        for (int i = 0; i < countX && created < size; i++)
+        for (int j = 0; j < n; j++)
         {
-            int jitter = (std::rand() % 5) + 1;
+            for (int i = 0; i < n; i++)
+            {
+                float x = startX + i * spacing;
+                float y = startY + j * spacing;
+                float z = startZ + k * spacing;
 
-            float x = origin.x + (i + 0.5f) * dx + jitter;
-            float y = origin.y + (j + 0.5f) * dy + jitter;
+                if (instances.size() == count)
+                    break;
 
-            Particle p{};
-            p.position = {x, y};
-            p.velocity = {0.0f, 0.0f};
-            p.C = glm::f32mat2x2(0.0f);
-
-            instances.push_back(p);
-            created++;
+                Particle p{};
+                p.position = {x, y, z};
+                p.velocity = {0.0f, 0.0f, 0.0f};
+                instances.push_back(p);
+            }
         }
     }
-
     return instances;
 }

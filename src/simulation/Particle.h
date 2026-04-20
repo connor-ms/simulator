@@ -6,11 +6,15 @@
 
 struct Particle
 {
-    glm::vec2 position;
-    glm::vec2 velocity;
-    glm::f32mat2x2 C;
+    glm::vec3 position;
+    float _pad0;
+    glm::vec3 velocity;
+    float _pad1;
+    glm::vec4 C[3];
     float debug1;
     float debug2;
+    float _pad3;
+    float _pad4;
 };
 
-std::vector<Particle> createParticleArray(int size, float width, float height, glm::vec2 origin);
+std::vector<Particle> createParticleArray(int count, float worldSize, float wallMargin);
