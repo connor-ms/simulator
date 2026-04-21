@@ -19,6 +19,8 @@ public:
     glm::vec3 getPosition();
     glm::vec3 screenToWorld(int x, int y);
 
+    void setTarget(glm::vec3 target) { m_target = target; }
+
 private:
     glm::mat4x4 m_projection;
     glm::mat4x4 m_view;

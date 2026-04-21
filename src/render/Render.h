@@ -56,4 +56,6 @@ private:
 
     wgpu::RenderPipeline m_particlePipeline;
     wgpu::RenderPipeline m_linePipeline;
+
+    wgpu::TextureView m_depthView;
 };

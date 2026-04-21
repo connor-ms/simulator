@@ -189,7 +189,7 @@ void Simulator::initPipeline()
 
 void Simulator::onFrame(wgpu::CommandEncoder encoder)
 {
-    for (int i = 0; i < 5; i++)
+    // for (int i = 0; i < 2; i++)
     {
         // Clear grid pass
         {

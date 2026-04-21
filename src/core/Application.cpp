@@ -27,9 +27,9 @@ void Application::initGlobals()
         .mousePos = glm::vec2(0, 0),
         .isMouseDown = false,
 
-        .gridSize = 64,
-        .dt = 0.04f,
-        .particleCount = 64000,
+        .gridSize = 128,
+        .dt = 0.12f,
+        .particleCount = 256000,
         .gravity = -0.4f,
 
         .rest_density = 4.0f,
@@ -112,6 +112,7 @@ void Application::initInstance()
     std::cout << "Requesting device..." << std::endl;
     wgpu::Limits limits{};
     limits.maxComputeInvocationsPerWorkgroup = 1024;
+    limits.maxStorageBufferBindingSize = 10726686720;
 
     wgpu::DeviceDescriptor desc{};
     desc.requiredLimits = &limits;

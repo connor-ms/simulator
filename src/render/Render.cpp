@@ -32,6 +32,10 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     m_simState = simState;
     m_cam = Camera();
 
+    glm::vec3 lookAtPos(ctx->globals.gridSize / 2, 0, ctx->globals.gridSize / 2);
+    m_cam.setTarget(lookAtPos);
+    m_cam.buildViewMatrix();
+
     m_uniforms.projection = m_cam.getProjectionMatrix();
     m_uniforms.view = m_cam.getViewMatrix();
 
@@ -62,6 +66,16 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     initBindGroupLayouts();
     initBindGroups();
     initPipeline();
+
+    wgpu::TextureDescriptor depthTexDesc{};
+    depthTexDesc.size = {2560, 1440, 1};
+    depthTexDesc.format = wgpu::TextureFormat::Depth24Plus; // must match pipeline
+    depthTexDesc.usage = wgpu::TextureUsage::RenderAttachment;
+    depthTexDesc.mipLevelCount = 1;
+    depthTexDesc.sampleCount = 1;
+
+    wgpu::Texture depthTexture = m_ctx->device.CreateTexture(&depthTexDesc);
+    m_depthView = depthTexture.CreateView();
 }
 
 void Renderer::initBindGroupLayouts()
@@ -246,6 +260,11 @@ void Renderer::initPipeline()
         frag.targetCount = 1;
         frag.targets = &colorTarget;
 
+        wgpu::DepthStencilState depthStencil{};
+        depthStencil.format = wgpu::TextureFormat::Depth24Plus;
+        depthStencil.depthWriteEnabled = true;
+        depthStencil.depthCompare = wgpu::CompareFunction::Less;
+
         wgpu::RenderPipelineDescriptor rp{};
         rp.layout = renderPipelineLayout;
         rp.vertex.module = particleShader;
@@ -255,6 +274,7 @@ void Renderer::initPipeline()
         rp.fragment = &frag;
         rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
         rp.multisample.count = 1;
+        rp.depthStencil = &depthStencil;
 
         m_particlePipeline = m_ctx->device.CreateRenderPipeline(&rp);
     }
@@ -303,9 +323,18 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
     attachment.loadOp = wgpu::LoadOp::Clear;
     attachment.storeOp = wgpu::StoreOp::Store;
 
+    wgpu::RenderPassDepthStencilAttachment depthAttachment{};
+    depthAttachment.view = m_depthView;
+    depthAttachment.depthClearValue = 1.0f;
+    depthAttachment.depthLoadOp = wgpu::LoadOp::Clear;
+    depthAttachment.depthStoreOp = wgpu::StoreOp::Store;
+    depthAttachment.stencilLoadOp = wgpu::LoadOp::Undefined; // no stencil
+    depthAttachment.stencilStoreOp = wgpu::StoreOp::Undefined;
+
     wgpu::RenderPassDescriptor renderpass{};
     renderpass.colorAttachmentCount = 1;
     renderpass.colorAttachments = &attachment;
+    renderpass.depthStencilAttachment = &depthAttachment;
 
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
 
@@ -318,12 +347,12 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
     pass.Draw(6, static_cast<uint32_t>(m_simState->particles.size()));
 
     // Draw lines
-    pass.SetPipeline(m_linePipeline);
-    pass.SetBindGroup(0, m_ctx->globalsBindGroup);
-    pass.SetBindGroup(1, m_lineRenderBindGroup);
-    pass.SetBindGroup(2, m_uniformsBindGroup);
-    pass.SetVertexBuffer(0, m_particleBuffer);
-    pass.Draw(6, static_cast<uint32_t>(lines.size()));
+    // pass.SetPipeline(m_linePipeline);
+    // pass.SetBindGroup(0, m_ctx->globalsBindGroup);
+    // pass.SetBindGroup(1, m_lineRenderBindGroup);
+    // pass.SetBindGroup(2, m_uniformsBindGroup);
+    // pass.SetVertexBuffer(0, m_particleBuffer);
+    // pass.Draw(6, static_cast<uint32_t>(lines.size()));
 
     pass.End();
 }

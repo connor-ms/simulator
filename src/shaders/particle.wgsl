@@ -4,6 +4,9 @@ struct VertexOut
     @location(0) uv : vec2<f32>,
     @location(1) debug1: f32,
     @location(2) debug2: f32,
+    @location(3) sphereCenter_view: vec3<f32>,
+    @location(4) fragPos_view: vec3<f32>,
+    @location(5) radius: f32,
 };
 
 struct Uniforms
@@ -22,54 +25,77 @@ fn vs_main(@location(0) pos : vec2<f32>,
            @builtin(instance_index) instanceIndex: u32) -> VertexOut
 {
     var out: VertexOut;
-    let radius = vec2<f32>(2, 2);
 
+    let radius = 2.0;
     let particle = particles[instanceIndex];
-    let worldPos = particle.position + vec3f(pos * radius, 0.0);
-    
-    out.position = uniforms.proj * uniforms.view * vec4<f32>(worldPos, 1.0);
+
+    let center_view = (uniforms.view * vec4<f32>(particle.position, 1.0)).xyz;
+
+    let quadOffset = pos * radius;
+    let vertPos_view = center_view + vec3<f32>(quadOffset, 0.0);
+
+    out.position = uniforms.proj * vec4<f32>(vertPos_view, 1.0);
     out.uv = uv;
     out.debug1 = particle.debug1;
     out.debug2 = particle.debug2;
-    
+    out.sphereCenter_view = center_view;
+    out.fragPos_view = vertPos_view;
+    out.radius = radius;
+
     return out;
 }
 
+struct FragOut {
+    @location(0) color: vec4<f32>,
+    @builtin(frag_depth) depth: f32,
+};
+
 @fragment
-fn fs_main(@builtin(position) position: vec4<f32>,
-           @location(0) uv : vec2<f32>,
-           @location(1) debug1: f32,
-           @location(2) debug2: f32) -> @location(0) vec4<f32>
+fn fs_main(@builtin(position) fragCoord: vec4<f32>,
+          @location(0) uv: vec2<f32>,
+          @location(1) debug1: f32,
+          @location(2) debug2: f32,
+          @location(3) sphereCenter_view: vec3<f32>,
+          @location(4) fragPos_view: vec3<f32>,
+          @location(5) radius: f32) -> FragOut
 {
-    let dist = length(uv - vec2<f32>(0.5, 0.5));
+    var out: FragOut;
 
-    if (dist > 0.5)
-    {
-        discard;
-    }
+    let rayOrigin = vec3<f32>(0.0, 0.0, 0.0);
+    let rayDir = normalize(fragPos_view);
 
-    // let velocity = vec2f(debug1, debug2);
+    let oc = rayOrigin - sphereCenter_view;
+    let b = dot(rayDir, oc);
+    let c = dot(oc, oc) - radius * radius;
+    let disc = b * b - c;
 
-    // let speed = length(velocity);
-    // let maxSpeed = 50.0;
-    // let t = clamp(speed / maxSpeed, 0.0, 1.0);
+    if (disc < 0.0) { discard; }
 
-    // let velDir = normalize(velocity) * 0.5 + 0.5;
+    let t = -b - sqrt(disc);
+    if (t < 0.0) { discard; }
 
-    // return vec4<f32>(velDir.x, velDir.y, t, 1.0);
+    let hitPos_view = rayOrigin + rayDir * t;
 
-    // if (globals.isMouseDown == 1) {
-    //     let dist = vec2f(position.x, position.y) - globals.mousePos;
-    //     if (dot(dist, dist) < (10 * 10)) {
-    //         return vec4<f32>(1, 1, 1, 1.0);
-    //     }
-    // }
+    let normal_view = normalize(hitPos_view - sphereCenter_view);
 
-    let pressure = debug1;
-    let density = debug2;
+    let hitPos_clip = uniforms.proj * vec4<f32>(hitPos_view, 1.0);
+    out.depth = hitPos_clip.z / hitPos_clip.w;
 
+    let lightDir = normalize(vec3<f32>(1.0, 2.0, 1.0));
+    let diffuse   = max(dot(normal_view, lightDir), 0.0);
+    let ambient   = 0.15;
+
+    let viewDir   = normalize(-hitPos_view);              // toward camera
+    let halfVec   = normalize(lightDir + viewDir);
+    let specular  = pow(max(dot(normal_view, halfVec), 0.0), 32.0) * 0.5;
+
+    let pressure    = debug1;
     let maxPressure = 50.0;
-    let t = clamp(pressure / maxPressure, 0.0, 1.0);
+    let tCol        = clamp(pressure / maxPressure, 0.0, 1.0);
+    let baseColor   = vec3<f32>(tCol, tCol, 1.0);
 
-    return vec4<f32>(t, t,1, 1.0);
+    let litColor = baseColor * (ambient + diffuse) + vec3<f32>(specular);
+    out.color = vec4<f32>(litColor, 1.0);
+
+    return out;
 }
