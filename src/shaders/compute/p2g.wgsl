@@ -36,8 +36,8 @@ fn p2g(@builtin(global_invocation_id) id: vec3<u32>) {
                 let mass_contrib = weight * 1.0;
                 let vel_contrib = mass_contrib * (p.velocity + Q);
 
-                let ci = i32(cell.x) * i32(globals.gridSize) * i32(globals.gridSize) + 
-                         i32(cell.y) * i32(globals.gridSize) +
+                let ci = i32(cell.x) * i32(globals.gridSize.y) * i32(globals.gridSize.z) + 
+                         i32(cell.y) * i32(globals.gridSize.z) +
                          i32(cell.z);
 
                 atomicAdd(&grid[ci].mass, toFixed(mass_contrib));
@@ -75,8 +75,8 @@ fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
                     cell_idx.z + f32(gz) - 1.0,
                 );
 
-                let ci = i32(cell.x) * i32(globals.gridSize) * i32(globals.gridSize) + 
-                         i32(cell.y) * i32(globals.gridSize) +
+                let ci = i32(cell.x) * i32(globals.gridSize.y) * i32(globals.gridSize.z) + 
+                         i32(cell.y) * i32(globals.gridSize.z) +
                          i32(cell.z);
 
                 density += toFloat(atomicLoad(&grid[ci].mass)) * weight;
@@ -116,8 +116,8 @@ fn p2g_2(@builtin(global_invocation_id) id: vec3<u32>) {
 
                 let cell_dist = (cell - p.position) + 0.5;
 
-                let ci = i32(cell.x) * i32(globals.gridSize) * i32(globals.gridSize) + 
-                         i32(cell.y) * i32(globals.gridSize) +
+                let ci = i32(cell.x) * i32(globals.gridSize.y) * i32(globals.gridSize.z) + 
+                         i32(cell.y) * i32(globals.gridSize.z) +
                          i32(cell.z);
 
                 let momentum = eq16_term_0 * weight * cell_dist;

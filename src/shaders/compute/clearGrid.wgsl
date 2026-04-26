@@ -4,12 +4,12 @@
 
 @compute @workgroup_size(8, 8, 8)
 fn clearGrid(@builtin(global_invocation_id) id: vec3<u32>) {
-    if (id.x >= globals.gridSize || id.y >= globals.gridSize || id.z >= globals.gridSize) {
+    if (id.x >= globals.gridSize.x || id.y >= globals.gridSize.y || id.z >= globals.gridSize.z) {
         return;
     }
 
-    let index = id.x * globals.gridSize * globals.gridSize +
-                id.y * globals.gridSize +
+    let index = id.x * globals.gridSize.y * globals.gridSize.z +
+                id.y * globals.gridSize.z +
                 id.z;
 
     atomicStore(&grid[index].mass, 0);

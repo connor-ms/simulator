@@ -26,7 +26,7 @@ fn vs_main(@location(0) pos : vec2<f32>,
 {
     var out: VertexOut;
 
-    let radius = 2.0;
+    let radius = 0.5;
     let particle = particles[instanceIndex];
 
     let center_view = (uniforms.view * vec4<f32>(particle.position, 1.0)).xyz;

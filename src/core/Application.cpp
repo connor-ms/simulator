@@ -27,9 +27,9 @@ void Application::initGlobals()
         .mousePos = glm::vec2(0, 0),
         .isMouseDown = false,
 
-        .gridSize = 128,
-        .dt = 0.12f,
-        .particleCount = 256000,
+        .gridSize = glm::uvec4(128, 128, 128, 0),
+        .dt = 0.08f,
+        .particleCount = 250000,
         .gravity = -0.4f,
 
         .rest_density = 4.0f,

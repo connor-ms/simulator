@@ -7,7 +7,7 @@
 void Simulator::init(GPUContext *ctx)
 {
     m_ctx = ctx;
-    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.gridSize, 0.5);
+    m_state.particles = createParticleArray(m_ctx->globals.particleCount, m_ctx->globals.gridSize.x, 0.5);
 
     initBindGroupLayouts();
     initBuffers();
@@ -57,7 +57,7 @@ void Simulator::initBuffers()
         wgpu::BufferDescriptor desc{};
         desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
         desc.mappedAtCreation = false;
-        desc.size = std::pow(m_ctx->globals.gridSize, 3) * sizeof(GridNode);
+        desc.size = m_ctx->globals.gridSize.x * m_ctx->globals.gridSize.y * m_ctx->globals.gridSize.z * sizeof(GridNode);
         desc.label = "GridNodes";
         m_state.gridBuffer = m_ctx->device.CreateBuffer(&desc);
 
@@ -78,7 +78,7 @@ void Simulator::initBindGroups()
     entries[1].binding = 1;
     entries[1].buffer = m_state.gridBuffer;
     entries[1].offset = 0;
-    entries[1].size = std::pow(m_ctx->globals.gridSize, 3) * sizeof(GridNode);
+    entries[1].size = m_ctx->globals.gridSize.x * m_ctx->globals.gridSize.y * m_ctx->globals.gridSize.z * sizeof(GridNode);
 
     wgpu::BindGroupDescriptor computeDesc{};
     computeDesc.layout = m_bindGroupLayout;
@@ -199,8 +199,10 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
             computePass.SetBindGroup(1, m_bindGroup);
 
             uint32_t workgroupSize = 8;
-            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-            computePass.DispatchWorkgroups(workgroupCount, workgroupCount, workgroupCount);
+            uint32_t wgX = (static_cast<uint32_t>(m_ctx->globals.gridSize.x) + workgroupSize - 1) / workgroupSize;
+            uint32_t wgY = (static_cast<uint32_t>(m_ctx->globals.gridSize.y) + workgroupSize - 1) / workgroupSize;
+            uint32_t wgZ = (static_cast<uint32_t>(m_ctx->globals.gridSize.z) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(wgX, wgY, wgZ);
 
             computePass.End();
         }
@@ -241,8 +243,10 @@ void Simulator::onFrame(wgpu::CommandEncoder encoder)
             computePass.SetBindGroup(1, m_bindGroup);
 
             uint32_t workgroupSize = 8;
-            uint32_t workgroupCount = (static_cast<uint32_t>(m_ctx->globals.gridSize) + workgroupSize - 1) / workgroupSize;
-            computePass.DispatchWorkgroups(workgroupCount, workgroupCount, workgroupCount);
+            uint32_t wgX = (static_cast<uint32_t>(m_ctx->globals.gridSize.x) + workgroupSize - 1) / workgroupSize;
+            uint32_t wgY = (static_cast<uint32_t>(m_ctx->globals.gridSize.y) + workgroupSize - 1) / workgroupSize;
+            uint32_t wgZ = (static_cast<uint32_t>(m_ctx->globals.gridSize.z) + workgroupSize - 1) / workgroupSize;
+            computePass.DispatchWorkgroups(wgX, wgY, wgZ);
 
             computePass.End();
         }

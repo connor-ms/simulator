@@ -32,8 +32,8 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
 
                 let cell_dist = (cell - p.position) + 0.5;
 
-                let ci = i32(cell.x) * i32(globals.gridSize) * i32(globals.gridSize) + 
-                         i32(cell.y) * i32(globals.gridSize) +
+                let ci = i32(cell.x) * i32(globals.gridSize.y) * i32(globals.gridSize.z) + 
+                         i32(cell.y) * i32(globals.gridSize.z) +
                          i32(cell.z);
 
                 let gv = vec3f(
@@ -58,7 +58,7 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
 
     // clamp to world bounds
     let lo = vec3f(1.0);
-    let hi = vec3f(f32(globals.gridSize - 2));
+    let hi = vec3f(f32(globals.gridSize.x - 2), f32(globals.gridSize.y - 2), f32(globals.gridSize.z - 2));
     p.position = clamp(p.position, lo, hi);
 
     // if (globals.isMouseDown == 1) {
@@ -73,7 +73,7 @@ fn g2p(@builtin(global_invocation_id) id: vec3<u32>) {
     let wall_stiffness = 0.3;
     let x_n = p.position + p.velocity * globals.dt * k;
     let wall_min = vec3f(1.0);
-    let wall_max = vec3f(f32(globals.gridSize - 2));
+    let wall_max = hi;
 
     if (x_n.x < wall_min.x) { p.velocity.x += wall_stiffness * (wall_min.x - x_n.x); }
     if (x_n.x > wall_max.x) { p.velocity.x += wall_stiffness * (wall_max.x - x_n.x); }

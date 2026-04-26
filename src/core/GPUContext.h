@@ -8,8 +8,9 @@ struct Globals
 {
     glm::vec2 mousePos;
     glm::i32 isMouseDown;
-    glm::i32 _pad2;
-    glm::u32 gridSize;
+    glm::i32 _pad;
+    // glm::u32 gridSize;
+    glm::uvec4 gridSize;
     glm::f32 dt;
     glm::u32 particleCount;
     glm::f32 gravity;
@@ -17,8 +18,8 @@ struct Globals
     glm::f32 dynamic_viscosity;
     glm::f32 eos_stiffness;
     glm::f32 eos_power;
-    glm::f32 _pad3;
-    glm::f32 _pad4;
+    glm::f32 _pad1;
+    // glm::f32 _pad4;
 };
 
 struct GPUContext

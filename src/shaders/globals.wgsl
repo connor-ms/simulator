@@ -7,17 +7,18 @@
 
 struct Globals
 {
-    mousePos: vec2<f32>,
-    isMouseDown: i32,
-    _pad2: i32,
-    gridSize: u32,
-    dt: f32,
-    particleCount: u32,
-    gravity: f32,
-    rest_density: f32,
-    dynamic_viscosity: f32,
-    eos_stiffness: f32,
-    eos_power: f32,
+    mousePos: vec2<f32>,    // 0 - 8
+    isMouseDown: i32,       // 8 - 12
+    _pad: i32,              // 12 - 16
+    gridSize: vec4<u32>,    // 16 - 32
+    dt: f32,                // 32 - 36
+    particleCount: u32,     // 36 - 40
+    gravity: f32,           // 40 - 44
+    rest_density: f32,      // 44 - 48
+    dynamic_viscosity: f32, // 48 - 52
+    eos_stiffness: f32,     // 52 - 56
+    eos_power: f32,         // 56 - 60
+    _pad2: f32,             // 60 - 64
 };
 
 struct Particle
