@@ -41,27 +41,27 @@ void Renderer::init(GPUContext *ctx, SimulationState *simState)
     m_uniforms.view = m_cam.getViewMatrix();
 
     const float LINE_THICKNESS = 1.0f;
-    // const float DEST = m_ctx->globals.gridSize;
+    const glm::vec4 gridSize = m_ctx->globals.gridSize;
 
-    // /* World bounding box */
+    /* World bounding box */
 
-    // // front face
-    // lines.push_back(Line{.p1 = glm::vec3(0, DEST, 0), .p2 = glm::vec3(DEST, DEST, 0), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(DEST, 0, 0), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, DEST, 0), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(DEST, 0, 0), .p2 = glm::vec3(DEST, DEST, 0), .thickness = LINE_THICKNESS});
+    // front face
+    lines.push_back(Line{.p1 = glm::vec3(0, gridSize.y, 0), .p2 = glm::vec3(gridSize.x, gridSize.y, 0), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(gridSize.x, 0, 0), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, gridSize.y, 0), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(gridSize.x, 0, 0), .p2 = glm::vec3(gridSize.x, gridSize.y, 0), .thickness = LINE_THICKNESS});
 
-    // // rear face
-    // lines.push_back(Line{.p1 = glm::vec3(0, DEST, DEST), .p2 = glm::vec3(DEST, DEST, DEST), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(0, 0, DEST), .p2 = glm::vec3(DEST, 0, DEST), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(0, 0, DEST), .p2 = glm::vec3(0, DEST, DEST), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(DEST, 0, DEST), .p2 = glm::vec3(DEST, DEST, DEST), .thickness = LINE_THICKNESS});
+    // rear face
+    lines.push_back(Line{.p1 = glm::vec3(0, gridSize.y, gridSize.z), .p2 = glm::vec3(gridSize.x, gridSize.y, gridSize.z), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, gridSize.z), .p2 = glm::vec3(gridSize.x, 0, gridSize.z), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, gridSize.z), .p2 = glm::vec3(0, gridSize.y, gridSize.z), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(gridSize.x, 0, gridSize.y), .p2 = glm::vec3(gridSize.x, gridSize.y, gridSize.z), .thickness = LINE_THICKNESS});
 
-    // // connecting edges
-    // lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, 0, DEST), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(DEST, 0, 0), .p2 = glm::vec3(DEST, 0, DEST), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(0, DEST, 0), .p2 = glm::vec3(0, DEST, DEST), .thickness = LINE_THICKNESS});
-    // lines.push_back(Line{.p1 = glm::vec3(DEST, DEST, 0), .p2 = glm::vec3(DEST, DEST, DEST), .thickness = LINE_THICKNESS});
+    // connecting edges
+    lines.push_back(Line{.p1 = glm::vec3(0, 0, 0), .p2 = glm::vec3(0, 0, gridSize.z), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(gridSize.x, 0, 0), .p2 = glm::vec3(gridSize.x, 0, gridSize.z), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(0, gridSize.x, 0), .p2 = glm::vec3(0, gridSize.y, gridSize.z), .thickness = LINE_THICKNESS});
+    lines.push_back(Line{.p1 = glm::vec3(gridSize.x, gridSize.y, 0), .p2 = glm::vec3(gridSize.x, gridSize.y, gridSize.z), .thickness = LINE_THICKNESS});
 
     initBuffers();
     initBindGroupLayouts();
@@ -290,6 +290,11 @@ void Renderer::initPipeline()
         frag.targetCount = 1;
         frag.targets = &colorTarget;
 
+        wgpu::DepthStencilState depthStencil{};
+        depthStencil.format = wgpu::TextureFormat::Depth24Plus;
+        depthStencil.depthWriteEnabled = true;
+        depthStencil.depthCompare = wgpu::CompareFunction::Less;
+
         wgpu::RenderPipelineDescriptor rp{};
         rp.layout = renderPipelineLayout;
         rp.vertex.module = lineShader;
@@ -299,6 +304,7 @@ void Renderer::initPipeline()
         rp.fragment = &frag;
         rp.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
         rp.multisample.count = 1;
+        rp.depthStencil = &depthStencil;
 
         m_linePipeline = m_ctx->device.CreateRenderPipeline(&rp);
     }
@@ -348,12 +354,12 @@ void Renderer::onFrame(wgpu::CommandEncoder encoder)
     pass.Draw(6, static_cast<uint32_t>(m_simState->particles.size()));
 
     // Draw lines
-    // pass.SetPipeline(m_linePipeline);
-    // pass.SetBindGroup(0, m_ctx->globalsBindGroup);
-    // pass.SetBindGroup(1, m_lineRenderBindGroup);
-    // pass.SetBindGroup(2, m_uniformsBindGroup);
-    // pass.SetVertexBuffer(0, m_particleBuffer);
-    // pass.Draw(6, static_cast<uint32_t>(lines.size()));
+    pass.SetPipeline(m_linePipeline);
+    pass.SetBindGroup(0, m_ctx->globalsBindGroup);
+    pass.SetBindGroup(1, m_lineRenderBindGroup);
+    pass.SetBindGroup(2, m_uniformsBindGroup);
+    pass.SetVertexBuffer(0, m_particleBuffer);
+    pass.Draw(6, static_cast<uint32_t>(lines.size()));
 
     pass.End();
 }
